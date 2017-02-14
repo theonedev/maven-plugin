@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.gitplex</groupId>
-	<artifactId>plugin.maven</artifactId>
-	<version>1.0.0</version>
+	<parent>
+		<groupId>com.gitplex</groupId>
+		<artifactId>parent</artifactId>
+		<version>1.0.0</version>
+	</parent>
+	<artifactId>plugin-maven</artifactId>
 	<packaging>maven-plugin</packaging>
 	<prerequisites>
 		<maven>${mavenVersion}</maven>
@@ -47,13 +50,6 @@
 								</pluginExecution>
 							</pluginExecutions>
 						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
-				<plugin>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<configuration>
-						<source>1.8</source>
-						<target>1.8</target>
 					</configuration>
 				</plugin>
 			</plugins>
@@ -107,31 +103,7 @@
 			<optional>true</optional>
 		</dependency>
 	</dependencies>
-	<distributionManagement>
-		<repository>
-			<id>pmeaseRepo</id>
-            <url>http://artifact.pmease.com/artifactory/pmeaseRepo</url> 
-		</repository>
-	</distributionManagement>
-	<repositories>
-		<repository>
-			<id>pmeaseRepo</id>
-            <url>http://artifact.pmease.com/artifactory/pmeaseRepo</url> 
-			<releases>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-				<checksumPolicy>fail</checksumPolicy>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>always</updatePolicy>
-				<checksumPolicy>fail</checksumPolicy>
-			</snapshots>
-		</repository>
-	</repositories>
 	<properties>
 		<mavenVersion>3.2.1</mavenVersion>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
 </project>
