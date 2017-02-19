@@ -103,6 +103,22 @@
 			<optional>true</optional>
 		</dependency>
 	</dependencies>
+	<repositories>
+		<repository>
+			<id>pmeaseRepo</id>
+			<url>http://artifact.pmease.com/artifactory/pmeaseRepo</url>
+			<releases>
+				<enabled>true</enabled>
+				<updatePolicy>never</updatePolicy>
+				<checksumPolicy>fail</checksumPolicy>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+				<checksumPolicy>fail</checksumPolicy>
+			</snapshots>
+		</repository>
+	</repositories>
 	<properties>
 		<mavenVersion>3.2.1</mavenVersion>
 	</properties>
