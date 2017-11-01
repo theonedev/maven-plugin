@@ -210,8 +210,10 @@ public class CheckProjectDependenciesMojo extends AbstractMojo {
 			}
 			
 			for (Map.Entry<String, Set<String>> entry: artifactVersions.entrySet()) {
-				if (entry.getValue().size() > 1)
-					errors.add("Version onflicts found for dependency '" + entry.getKey() + "'.");
+				if (entry.getValue().size() > 1) {
+					String values = StringUtils.join(entry.getValue().iterator(), ", ");
+					errors.add("Version onflicts found for dependency '" + entry.getKey() + "'. Found versions: " + values);
+				}
 			}
 		}
 
