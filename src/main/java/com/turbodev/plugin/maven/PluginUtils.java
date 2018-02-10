@@ -1,4 +1,4 @@
-package com.gitplex.plugin.maven;
+package com.turbodev.plugin.maven;
 
 import java.io.File;
 import java.io.FileInputStream;

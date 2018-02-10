@@ -1,4 +1,4 @@
-package com.gitplex.plugin.maven;
+package com.turbodev.plugin.maven;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -54,7 +54,7 @@ import org.codehaus.plexus.util.StringUtils;
 
 /**
  * This task does the same as maven-antrun-plugin's run goal except that it will be executed upon 
- * Eclipse incremental build (via m2e lifecycle mapping in com.gitplex.maven.parent pom). If you 
+ * Eclipse incremental build (via m2e lifecycle mapping in com.turbodev.maven.parent pom). If you 
  * want to execute ant tasks without being invoked by Eclipse incremental build, please use 
  * maven-antrun-plugin's run goal instead. 
  *  
