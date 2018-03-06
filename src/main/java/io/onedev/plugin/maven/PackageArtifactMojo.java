@@ -1,4 +1,4 @@
-package com.turbodev.plugin.maven;
+package io.onedev.plugin.maven;
 
 import java.io.File;
 import java.io.FileOutputStream;
