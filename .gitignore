@@ -5,6 +5,7 @@ target
 .recommenders/
 .idea/
 **/.classpath
+**/.project
 **/*.iml
 release.properties
 pom.xml.releaseBackup
