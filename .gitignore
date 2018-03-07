@@ -1,12 +1,7 @@
-*/target/**
-target
-*/bin/**
-.metadata/
-.recommenders/
-.idea/
-**/.classpath
-**/.project
-**/*.iml
+target/
+.classpath
+.project
+.settings/
 release.properties
 pom.xml.releaseBackup
 
