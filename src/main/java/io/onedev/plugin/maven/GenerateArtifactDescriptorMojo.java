@@ -1,6 +1,10 @@
 package io.onedev.plugin.maven;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.maven.artifact.Artifact;
@@ -34,13 +38,22 @@ public class GenerateArtifactDescriptorMojo extends AbstractMojo {
     	if (!outputDir.exists())
     		outputDir.mkdirs();
     	
-    	File propsFile = new File(outputDir, PluginConstants.ARTIFACT_PROPERTY_FILE);
     	Properties props = new Properties();
     	props.put("id", project.getArtifact().getGroupId() + "." + project.getArtifact().getArtifactId());
     	props.put("version", project.getArtifact().getVersion());
     	
     	StringBuffer buffer = new StringBuffer();
-    	for (Artifact artifact: project.getDependencyArtifacts()) {
+    	List<Artifact> dependencies = new ArrayList<>(project.getDependencyArtifacts());
+    	Collections.sort(dependencies, new Comparator<Artifact>() {
+
+			@Override
+			public int compare(Artifact o1, Artifact o2) {
+				return (o1.getGroupId() + "." + o1.getArtifactId() + ":" + o1.getVersion())
+						.compareTo(o2.getGroupId() + "." + o2.getArtifactId() + ":" + o2.getVersion());
+			}
+    		
+    	});
+    	for (Artifact artifact: dependencies) {
     		if (PluginUtils.isRuntimeArtifact(artifact) 
     				&& PluginUtils.containsFile(artifact.getFile(), PluginConstants.ARTIFACT_PROPERTY_FILE)) {
 	    		buffer.append(artifact.getGroupId()).append(".").append(artifact.getArtifactId())
@@ -49,10 +62,13 @@ public class GenerateArtifactDescriptorMojo extends AbstractMojo {
     	}
     	props.put("dependencies", buffer.toString());
     	
-    	PluginUtils.writeProperties(propsFile, props);
+    	File propsFile = new File(outputDir, PluginConstants.ARTIFACT_PROPERTY_FILE);
+    	if (!propsFile.exists() || !PluginUtils.loadProperties(propsFile).equals(props))
+        	PluginUtils.writeProperties(propsFile, props);
     	
-    	if (bootstrap)
-    		PluginUtils.writeProperties(new File(outputDir, PluginConstants.BOOTSTRAP_PROPERTY_FILE), new Properties());
+    	File bootstrapPropsFile = new File(outputDir, PluginConstants.BOOTSTRAP_PROPERTY_FILE);
+    	if (bootstrap && !bootstrapPropsFile.exists()) 
+    		PluginUtils.writeProperties(bootstrapPropsFile, new Properties());
     }
     
 }

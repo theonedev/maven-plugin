@@ -386,20 +386,22 @@ public class PluginUtils {
 	}
 	
 	public static void writeObject(File file, Object obj) {
-    	ObjectOutputStream oos = null;
-    	try {
-    		oos = new ObjectOutputStream(new FileOutputStream(file));
-    		oos.writeObject(obj);
-    	} catch (Exception e) {
-    		throw unchecked(e);
-		} finally {
-			if (oos != null) {
-				try {
-					oos.close();
-				} catch (IOException e) {
+		if (!file.exists() || !obj.equals(readObject(file))) {
+	    	ObjectOutputStream oos = null;
+	    	try {
+	    		oos = new ObjectOutputStream(new FileOutputStream(file));
+	    		oos.writeObject(obj);
+	    	} catch (Exception e) {
+	    		throw unchecked(e);
+			} finally {
+				if (oos != null) {
+					try {
+						oos.close();
+					} catch (IOException e) {
+					}
 				}
-			}
-    	}
+	    	}
+		}
 	}
 	
 	public static Object readObject(File file) {

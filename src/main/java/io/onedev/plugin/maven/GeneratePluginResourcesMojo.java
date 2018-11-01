@@ -1,7 +1,10 @@
 package io.onedev.plugin.maven;
 
 import java.io.File;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.maven.artifact.Artifact;
@@ -47,11 +50,19 @@ public class GeneratePluginResourcesMojo extends AbstractMojo {
     		props.put("vendor", project.getOrganization().getName());
     	props.put("id", project.getArtifact().getGroupId() + "." + project.getArtifact().getArtifactId());
     	props.put("version", project.getArtifact().getVersion());
-    	props.put("date", String.valueOf(System.currentTimeMillis()));
     	props.put("module", moduleClass);
 
     	StringBuffer buffer = new StringBuffer();
-    	for (Artifact artifact: ((Collection<Artifact>)project.getDependencyArtifacts())) {
+    	List<Artifact> dependencies = new ArrayList<>(project.getDependencyArtifacts());
+    	Collections.sort(dependencies, new Comparator<Artifact>() {
+
+			@Override
+			public int compare(Artifact o1, Artifact o2) {
+				return (o1.getGroupId() + "." + o1.getArtifactId()).compareTo(o2.getGroupId() + "." + o2.getArtifactId());
+			}
+    		
+    	});
+    	for (Artifact artifact: dependencies) {
     		if (PluginUtils.isRuntimeArtifact(artifact) 
     				&& PluginUtils.containsFile(artifact.getFile(), PluginConstants.PLUGIN_PROPERTY_FILE)) {
     			buffer.append(artifact.getGroupId() + "." + artifact.getArtifactId()).append(";");
@@ -59,7 +70,8 @@ public class GeneratePluginResourcesMojo extends AbstractMojo {
     	}
     	props.put("dependencies", buffer.toString());
 
-    	PluginUtils.writeProperties(propsFile, props);
+    	if (!propsFile.exists() || !PluginUtils.loadProperties(propsFile).equals(props))
+    		PluginUtils.writeProperties(propsFile, props);
     }
     
 }

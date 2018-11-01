@@ -68,8 +68,9 @@ public class GenerateProductResourcesMojo extends AbstractMojo {
     	Properties props = new Properties();
     	props.put("executables", executables);
 
-    	PluginUtils.writeProperties(
-    			new File(project.getBuild().getOutputDirectory(), PluginConstants.PRODUCT_PROPERTY_FILE), props);
+    	File propsFile = new File(project.getBuild().getOutputDirectory(), PluginConstants.PRODUCT_PROPERTY_FILE); 
+    	if (!propsFile.exists() || !PluginUtils.loadProperties(propsFile).equals(props))
+    		PluginUtils.writeProperties(propsFile, props);
 
     	Set<String> bootstrapKeys = new HashSet<String>();
 
