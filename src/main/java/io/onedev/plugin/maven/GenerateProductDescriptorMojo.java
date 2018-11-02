@@ -15,10 +15,10 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
 
 /**
- * @goal generate-product-resources
+ * @goal generate-product-descriptor
  * @requiresDependencyResolution compile+runtime
  */
-public class GenerateProductResourcesMojo extends AbstractMojo {
+public class GenerateProductDescriptorMojo extends AbstractMojo {
 	
 	/**
      * @parameter default-value="${project}"

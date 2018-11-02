@@ -13,10 +13,10 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 
 /**
- * @goal generate-plugin-resources
+ * @goal generate-plugin-descriptor
  * @requiresDependencyResolution compile+runtime
  */
-public class GeneratePluginResourcesMojo extends AbstractMojo {
+public class GeneratePluginDescriptorMojo extends AbstractMojo {
 	
 	/**
      * @parameter default-value="${project}"
