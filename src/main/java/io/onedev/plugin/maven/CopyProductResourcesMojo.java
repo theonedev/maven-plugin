@@ -29,7 +29,7 @@ public class CopyProductResourcesMojo extends AbstractMojo {
 		scanner.setIncludes(new String[] {"**"});
 		scanner.scan();
 
-		File destDir = new File(project.getBuild().getDirectory(), PluginConstants.SANDBOX + "/system");
+		File destDir = new File(project.getBuild().getDirectory(), PluginConstants.SANDBOX);
 		for (String included: scanner.getIncludedFiles()) {
 			File srcFile = new File(srcDir, included);
 			File destFile = new File(destDir, included); 
