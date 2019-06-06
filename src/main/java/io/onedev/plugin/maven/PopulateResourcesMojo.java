@@ -15,7 +15,6 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.taskdefs.Chmod;
 import org.apache.tools.ant.taskdefs.Echo;
 import org.codehaus.plexus.archiver.UnArchiver;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
@@ -179,9 +178,9 @@ public class PopulateResourcesMojo extends AbstractMojo {
     	    			repoSystem, repoSession, remoteRepos);
 
     	    	File systemDir = new File(project.getBasedir(), "system");
-    	    	int systemDirLen = systemDir.getAbsolutePath().length();
-    			for (File file: PluginUtils.listFiles(systemDir)) {
-    				File destFile = new File(sandboxDir, file.getAbsolutePath().substring(systemDirLen)); 
+    	    	for (String path: PluginUtils.listFiles(systemDir, null, null)) {
+    	    		File file = new File(systemDir, path);
+    				File destFile = new File(sandboxDir, path); 
     				if (file.isDirectory()) {
     					if (!destFile.exists())
     						destFile.mkdirs();
@@ -193,9 +192,20 @@ public class PopulateResourcesMojo extends AbstractMojo {
     					}
     					destFile.setLastModified(file.lastModified());
     				}
-    			} 
+    	    	}
 
-    			writeVersionFile(new File(sandboxDir, "version.txt"));
+    			try {
+    				File versionFile = new File(sandboxDir, "version.txt");
+    				if (!versionFile.exists() || !project.getVersion().equals(FileUtils.fileRead(versionFile).trim())) {
+    					Echo echo = new Echo();
+    					echo.setProject(PluginUtils.newAntProject(getLog()));
+    					echo.setFile(versionFile);
+    					echo.setMessage(project.getVersion());
+    					echo.execute();
+    				}
+    			} catch (BuildException | IOException e) {
+    				throw new RuntimeException(e);
+    			}
     		} else {
     	    	for (Artifact artifact: project.getArtifacts()) {
     	    		if (PluginUtils.isRuntimeArtifact(artifact)) {
@@ -225,19 +235,10 @@ public class PopulateResourcesMojo extends AbstractMojo {
 	    	    						throw new RuntimeException(e);
 	    	    					}
 	    	    	    		}
-	    	    				String executables = productProps.getProperty("executables");
-	    	    				
-	    						Chmod chmod = new Chmod();
-	    						chmod.setProject(PluginUtils.newAntProject(getLog()));
-	    						chmod.setDir(sandboxDir);
-	    						chmod.setPerm("755");
-	    						chmod.setIncludes(executables);
-	    						chmod.execute();
 	    	    			}
 	    	    	    	File bootDir = new File(sandboxDir, "boot");
 	    	    	    	PluginUtils.writeClasspath(new File(bootDir, PluginConstants.SYSTEM_CLASSPATH), project, 
 	    	    	    			repoSystem, repoSession, remoteRepos);
-		        	    	writeVersionFile(new File(sandboxDir, project.getArtifactId() + "-version.txt"));
 	    	    			break;
 	    	    		}
     	    		}
@@ -246,18 +247,4 @@ public class PopulateResourcesMojo extends AbstractMojo {
     	}
     }
 	
-	private void writeVersionFile(File versionFile) {
-		try {
-			if (!versionFile.exists() || !project.getVersion().equals(FileUtils.fileRead(versionFile).trim())) {
-				Echo echo = new Echo();
-				echo.setProject(PluginUtils.newAntProject(getLog()));
-				echo.setFile(versionFile);
-				echo.setMessage(project.getVersion());
-				echo.execute();
-			}
-		} catch (BuildException | IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-    
 }

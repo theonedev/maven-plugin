@@ -27,6 +27,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.tools.ant.BuildEvent;
 import org.apache.tools.ant.BuildListener;
+import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
@@ -507,9 +508,25 @@ public class PluginUtils {
 		}
 	}
 
-	public static void addFileToJar(JarOutputStream jos, File file, int offset) {
-		String entryName = file.getAbsolutePath().substring(offset + 1);
-		
+	public static List<String> listFiles(File baseDir, String[] includes, String[] excludes) {
+    	DirectoryScanner scanner = new DirectoryScanner();
+    	scanner.setBasedir(baseDir);
+    	if (includes != null)
+    		scanner.setIncludes(includes);
+    	if (excludes != null)
+    		scanner.setExcludes(excludes);
+    	scanner.scan();		    	
+    	List<String> paths = new ArrayList<>();
+    	for (String path: scanner.getIncludedDirectories()) {
+    		if (path.length() != 0)
+    			paths.add(path);
+    	}
+    	for (String path: scanner.getIncludedFiles())
+    		paths.add(path);
+    	return paths;
+	}
+	
+	public static void addFileToJar(JarOutputStream jos, File file, String entryName) {
 		if (File.separatorChar != '/')
 			entryName = entryName.replace('\\', '/');
 		
@@ -540,17 +557,4 @@ public class PluginUtils {
 		}
 	}
 
-	public static Collection<File> listFiles(File dir) {
-		Collection<File> files = new ArrayList<>();
-		listFiles(dir, files);
-		return files;
-	}
-	
-	private static void listFiles(File dir, Collection<File> files) {
-		for (File file : dir.listFiles()) {
-			files.add(file);
-			if (file.isDirectory())
-				listFiles(file, files);
-		}
-	}
 }

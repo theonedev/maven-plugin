@@ -4,10 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -119,11 +117,6 @@ public class PackageArtifactsMojo extends AbstractMojo {
 	
 			File sandboxDir = new File(buildDir, PluginConstants.SANDBOX);
 	
-			/*
-			 * Below code is adapted from Maven's DefaultArchetypeManager to create an archetype style 
-			 * archive to avoid the "Can not override..." warning when use this archive to generate 
-			 * an archetype.
-			 */
 			JarOutputStream jos = null;
 			try {
 				Manifest manifest = new Manifest();
@@ -131,25 +124,18 @@ public class PackageArtifactsMojo extends AbstractMojo {
 				jos = new JarOutputStream(new FileOutputStream(jarFile), manifest);
 				jos.setLevel(9);
 	
-				Collection<File> files = PluginUtils.listFiles(outputDir);
-	
-				for (File file : files) 
-					PluginUtils.addFileToJar(jos, file, outputDir.getAbsolutePath().length());
+		    	for (String path: PluginUtils.listFiles(outputDir, null, null)) {
+		    		File file = new File(outputDir, path);
+					PluginUtils.addFileToJar(jos, file, path);
+		    	}
 	
 				// include sandbox in product jar in order to generate sandbox when develop standalone plugins
-				if (productPropsFile.exists()) { 
-					files = PluginUtils.listFiles(sandboxDir);
-					
-					Set<String> excluded = new HashSet<String>();
-					for (Artifact artifact: project.getArtifacts())
-						excluded.add(PluginUtils.getArtifactKey(artifact));
-					excluded.add(PluginConstants.SYSTEM_CLASSPATH);
-					excluded.add(jarFile.getName());
-	
-					for (File file: files) {
-						if (!excluded.contains(file.getName())) 
-							PluginUtils.addFileToJar(jos, file, sandboxDir.getParent().length());
-					}
+		    	if (productPropsFile.exists()) { 
+			    	for (String path: PluginUtils.listFiles(sandboxDir, null, 
+			    			new String[]{"site/lib/*.jar", "lib/**", "boot/system.classpath"})) {
+			    		File file = new File(sandboxDir, path);
+						PluginUtils.addFileToJar(jos, file, PluginConstants.SANDBOX + "/" + path);
+			    	}
 				}
 			} catch (IOException e) {
 				throw new RuntimeException(e);
@@ -243,9 +229,27 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					chmod.setIncludes(executables);
 					chmod.execute();
 					
-					createAppZip("onedev", executables);
+					String prefix = "onedev-" + project.getVersion();
+					Zip zip = new Zip();
+					zip.setProject(PluginUtils.newAntProject(getLog()));
+					
+					zip.setDestFile(new File(project.getBuild().getDirectory(), prefix + ".zip"));
+					
+					ZipFileSet zipFileSet = new ZipFileSet();
+					zipFileSet.setDir(sandboxDir);
+					zipFileSet.setPrefix(prefix);
+					zipFileSet.setExcludes(executables + ", boot/system.classpath, site/lib/*.jar");
+					zip.addZipfileset(zipFileSet);
+					
+					zipFileSet = new ZipFileSet();
+					zipFileSet.setDir(sandboxDir);
+					zipFileSet.setPrefix(prefix);
+					zipFileSet.setIncludes(executables);
+					zipFileSet.setFileMode("755");
+					zip.addZipfileset(zipFileSet);
+					
+					zip.execute();
 				} else {
-					// Create a plugin zip which can be deployed into OneDev's site/lib directory
 					Archiver archiver;
 					try {
 						archiver = archiverManager.getArchiver("zip");
@@ -288,38 +292,8 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					} catch (Exception e) {
 						throw PluginUtils.unchecked(e);
 					}		
-			    	
-					// Create an application zip including the plugin which can run independently
-					String prefix = project.getArtifactId() + "-" + project.getVersion();
-		    		Properties productProps = PluginUtils.loadProperties(
-		    				productArtifact.getFile(), PluginConstants.PRODUCT_PROPERTY_FILE);
-					String executables = productProps.getProperty("executables");
-					createAppZip(prefix, executables);
 				}							
 			}
     	}
-    }
-    
-    private void createAppZip(String prefix, String executables) {
-    	File sandboxDir = new File(project.getBuild().getDirectory(), PluginConstants.SANDBOX);
-		Zip zip = new Zip();
-		zip.setProject(PluginUtils.newAntProject(getLog()));
-		
-		zip.setDestFile(new File(project.getBuild().getDirectory(), prefix + ".zip"));
-		
-		ZipFileSet zipFileSet = new ZipFileSet();
-		zipFileSet.setDir(sandboxDir);
-		zipFileSet.setPrefix(prefix);
-		zipFileSet.setExcludes(executables + ", boot/system.classpath, site/lib/*.jar");
-		zip.addZipfileset(zipFileSet);
-		
-		zipFileSet = new ZipFileSet();
-		zipFileSet.setDir(sandboxDir);
-		zipFileSet.setPrefix(prefix);
-		zipFileSet.setIncludes(executables);
-		zipFileSet.setFileMode("755");
-		zip.addZipfileset(zipFileSet);
-		
-		zip.execute();
-    }
+    }    
 }
