@@ -25,6 +25,9 @@ import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.apache.tools.ant.BuildEvent;
+import org.apache.tools.ant.BuildListener;
+import org.apache.tools.ant.Project;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
 import org.codehaus.plexus.archiver.manager.NoSuchArchiverException;
@@ -177,6 +180,51 @@ public class PluginUtils {
 		return bootArtifacts;
 	}
 	
+	public static Project newAntProject(Log log) {
+		Project antProject = new Project();
+		antProject.init();
+		antProject.addBuildListener(new BuildListener(){
+
+			@Override
+			public void messageLogged(BuildEvent event) {
+				if (event.getPriority() == Project.MSG_ERR)
+					log.error(event.getMessage());
+				else if (event.getPriority() == Project.MSG_WARN)
+					log.warn(event.getMessage());
+				else if (event.getPriority() == Project.MSG_INFO)
+					log.info(event.getMessage());
+				else
+					log.debug(event.getMessage());
+			}
+
+			@Override
+			public void buildFinished(BuildEvent event) {
+			}
+
+			@Override
+			public void buildStarted(BuildEvent event) {
+			}
+
+			@Override
+			public void targetFinished(BuildEvent event) {
+			}
+
+			@Override
+			public void targetStarted(BuildEvent event) {
+			}
+
+			@Override
+			public void taskFinished(BuildEvent event) {
+			}
+
+			@Override
+			public void taskStarted(BuildEvent event) {
+			}
+			
+		});
+		return antProject;
+	}
+	
 	@SuppressWarnings("unchecked")
 	public static void populateArtifacts(MavenProject project, File sandboxDir, ArchiverManager archiverManager, 
 			RepositorySystem repoSystem, RepositorySystemSession repoSession, List<RemoteRepository> remoteRepos) {
@@ -229,7 +277,7 @@ public class PluginUtils {
 			archiver.setDestFile(destFile);
 			DefaultArchivedFileSet fileSet = new DefaultArchivedFileSet();
 			fileSet.setArchive(srcFile);
-			fileSet.setExcludes(new String[]{"sandbox/**", "archetype-resources/**"});
+			fileSet.setExcludes(new String[]{"sandbox/**"});
 			archiver.addArchivedFileSet(fileSet);
 			
 			try {
@@ -347,21 +395,23 @@ public class PluginUtils {
 	}
 	
 	public static void writeProperties(File file, Properties props) {
-		if (!file.getParentFile().exists())
-			file.getParentFile().mkdirs();
-    	OutputStream os = null;
-    	try {
-    		os = new FileOutputStream(file);
-    		props.store(os, null);
-    	} catch (Exception e) {
-    		throw unchecked(e);
-		} finally {
-			if (os != null) {
-				try {
-					os.close();
-				} catch (IOException e) {
-				}
-			}
+    	if (!file.exists() || !loadProperties(file).equals(props)) {
+    		if (!file.getParentFile().exists())
+    			file.getParentFile().mkdirs();
+        	OutputStream os = null;
+        	try {
+        		os = new FileOutputStream(file);
+        		props.store(os, null);
+        	} catch (Exception e) {
+        		throw unchecked(e);
+    		} finally {
+    			if (os != null) {
+    				try {
+    					os.close();
+    				} catch (IOException e) {
+    				}
+    			}
+        	}
     	}
 	}
 	
@@ -457,32 +507,15 @@ public class PluginUtils {
 		}
 	}
 
-	public static void addFileToJar(JarOutputStream jos, File file, int offset, boolean includeArchetypeResources) {
+	public static void addFileToJar(JarOutputStream jos, File file, int offset) {
 		String entryName = file.getAbsolutePath().substring(offset + 1);
 		
 		if (File.separatorChar != '/')
 			entryName = entryName.replace('\\', '/');
 		
-		/*
-		 * When a produt or a plugin is created via archetype "archetype.product" or "archetype.plugin",
-		 * it will contain an archetype targeted at creating extensions to the product or plugin. To 
-		 * avoid the issue that the directory "archetype-resources/" representing the second archetype 
-		 * is trimmed when getting resources out of the archetype jar file 
-		 * by maven "DefaultArchetypeArtifactManager.getFilesetArchetypeResources" at time of generating 
-		 * the product or plugin, we rename it to "archetype-resource/"; otherwise, m2e will report 
-		 * weird errors when generating product/plugin using the archetype. Below code rename it back when 
-		 * package the archetype to confirm to maven archetype specification.  
-		 */
-		
-		if (entryName.startsWith(PluginConstants.ARCHETYPE_RESOURCE))
-			entryName = PluginConstants.ARCHETYPE_RESOURCES + entryName.substring(PluginConstants.ARCHETYPE_RESOURCE.length());
-		
 		if (file.isDirectory())
 			entryName += "/";
 
-		if ((entryName.startsWith(PluginConstants.ARCHETYPE_RESOURCES) || entryName.equals("META-INF/maven/archetype-metadata.xml")) && !includeArchetypeResources)
-			return;
-		
 		try {
 			jos.putNextEntry(new JarEntry(entryName));
 		} catch (IOException e) {
@@ -507,11 +540,17 @@ public class PluginUtils {
 		}
 	}
 
-	public static void listFiles(File dir, List<File> fileList) {
+	public static Collection<File> listFiles(File dir) {
+		Collection<File> files = new ArrayList<>();
+		listFiles(dir, files);
+		return files;
+	}
+	
+	private static void listFiles(File dir, Collection<File> files) {
 		for (File file : dir.listFiles()) {
-			fileList.add(file);
+			files.add(file);
 			if (file.isDirectory())
-				listFiles(file, fileList);
+				listFiles(file, files);
 		}
 	}
 }
