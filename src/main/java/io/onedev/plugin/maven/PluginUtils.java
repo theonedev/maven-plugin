@@ -29,10 +29,6 @@ import org.apache.tools.ant.BuildEvent;
 import org.apache.tools.ant.BuildListener;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
-import org.codehaus.plexus.archiver.Archiver;
-import org.codehaus.plexus.archiver.manager.ArchiverManager;
-import org.codehaus.plexus.archiver.manager.NoSuchArchiverException;
-import org.codehaus.plexus.archiver.util.DefaultArchivedFileSet;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
@@ -227,8 +223,8 @@ public class PluginUtils {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static void populateArtifacts(MavenProject project, File sandboxDir, ArchiverManager archiverManager, 
-			RepositorySystem repoSystem, RepositorySystemSession repoSession, List<RemoteRepository> remoteRepos) {
+	public static void populateArtifacts(MavenProject project, File sandboxDir, RepositorySystem repoSystem, 
+			RepositorySystemSession repoSession, List<RemoteRepository> remoteRepos) {
 		
 		if (project.getArtifact().getFile() == null)
 			throw new RuntimeException("Project artifact not generated yet."); 
@@ -263,36 +259,12 @@ public class PluginUtils {
 				destFile = new File(bootDir, artifactKey);
 			else
 				destFile = new File(libDir, artifactKey);
-			copyArtifact(artifact.getFile(), destFile, archiverManager);
-    	}
-	}
-	
-	private static void copyArtifact(File srcFile, File destFile, ArchiverManager archiverManager) {
-		if (containsFile(srcFile, PluginConstants.PRODUCT_PROPERTY_FILE)) {
-	    	Archiver archiver;
 			try {
-				archiver = archiverManager.getArchiver("jar");
-			} catch (NoSuchArchiverException e) {
-				throw new RuntimeException(e);
-			}
-			archiver.setDestFile(destFile);
-			DefaultArchivedFileSet fileSet = new DefaultArchivedFileSet();
-			fileSet.setArchive(srcFile);
-			fileSet.setExcludes(new String[]{"sandbox/**"});
-			archiver.addArchivedFileSet(fileSet);
-			
-			try {
-				archiver.createArchive();
-			} catch (Exception e) {
-				throw unchecked(e);
-			}
-		} else {
-			try {
-				FileUtils.copyFile(srcFile, destFile);
+				FileUtils.copyFile(artifact.getFile(), destFile);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
-		}
+    	}
 	}
 	
 	public static Logger toLogger(final Log log, final String name) {

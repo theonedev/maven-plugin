@@ -129,10 +129,10 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					PluginUtils.addFileToJar(jos, file, path);
 		    	}
 	
-				// include sandbox in product jar in order to generate sandbox when develop standalone plugins
+				// include part of sandbox in product jar in order to generate run environment when develop standalone plugins
 		    	if (productPropsFile.exists()) { 
 			    	for (String path: PluginUtils.listFiles(sandboxDir, null, 
-			    			new String[]{"site/lib/*.jar", "lib/**", "boot/system.classpath"})) {
+			    			new String[]{"site/lib/*.jar", "boot/system.classpath"})) {
 			    		File file = new File(sandboxDir, path);
 						PluginUtils.addFileToJar(jos, file, PluginConstants.SANDBOX + "/" + path);
 			    	}
@@ -147,7 +147,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 			
 			if (sandboxDir.exists()) {
 				org.apache.tools.ant.Project antProject = PluginUtils.newAntProject(getLog());
-				PluginUtils.populateArtifacts(project, sandboxDir, archiverManager, repoSystem, repoSession, remoteRepos);
+				PluginUtils.populateArtifacts(project, sandboxDir, repoSystem, repoSession, remoteRepos);
 	
 				if (productPropsFile.exists()) {
 					Expand expand = new Expand();
