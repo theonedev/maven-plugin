@@ -186,11 +186,11 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					filterSet.addFilter("properties_and_parameters", "wrapper.pidfile=../status/onedev.pid");
 					copy.execute();
 	
-					copyBatchCommand(antProject, "restore", "Restore");
-					copyBatchCommand(antProject, "backup", "Backup");
+					copyBatchCommand(antProject, "restore-db", "Restore Database");
+					copyBatchCommand(antProject, "backup-db", "Backup Database");
 					copyBatchCommand(antProject, "upgrade", "Upgrade");
-					copyBatchCommand(antProject, "apply_db_constraints", "Apply DB Constraints");
-					copyBatchCommand(antProject, "reset_admin_password", "Reset Admin Password");
+					copyBatchCommand(antProject, "apply-db-constraints", "Apply DB Constraints");
+					copyBatchCommand(antProject, "reset-admin-password", "Reset Admin Password");
 					
 					FilterSet appFilterSet = new FilterSet();
 					appFilterSet.addFilter("app.name", "onedev");
@@ -207,11 +207,11 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					filterSet.addFilter("properties_and_parameters", "--");
 					copy.execute();
 					
-					copyShellCommand(antProject, "restore", "Restore");
-					copyShellCommand(antProject, "backup", "Backup");
+					copyShellCommand(antProject, "restore-db", "Restore Database");
+					copyShellCommand(antProject, "backup-db", "Backup Database");
 					copyShellCommand(antProject, "upgrade", "Upgrade");
-					copyShellCommand(antProject, "apply_db_constraints", "Apply DB Constraints");
-					copyShellCommand(antProject, "reset_admin_password", "Reset Admin Password");
+					copyShellCommand(antProject, "apply-db-constraints", "Apply DB Constraints");
+					copyShellCommand(antProject, "reset-admin-password", "Reset Admin Password");
 	
 					copy = new Copy();
 					copy.setProject(antProject);
