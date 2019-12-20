@@ -7,6 +7,8 @@
             <paramSpecs/>
             <image>@scripts:builtin:maven:determine-docker-image@</image>
             <commands>
+                <string>set -e</string>
+                <string>rm -rf ~/.m2/repository/io/onedev # force to re-download dependencies as sometimes we may forget to increase project versions</string>
                 <string>echo "Detecting project version (may require some time while downloading maven dependencies)..."</string>
                 <string>buildVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout)</string>
                 <string>echo "##onedev[SetBuildVersion '$buildVersion']"</string>
