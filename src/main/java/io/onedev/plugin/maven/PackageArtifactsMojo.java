@@ -78,6 +78,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 		copy.setFile(new File(project.getBasedir(), "jsw/AppCommand.bat.in"));
 		FilterSet filterSet = copy.createFilterSet();
 		filterSet.addFilter("set_fixed_command", "set _FIXED_COMMAND=console");
+		filterSet.addFilter("set_pass_through", "set _PASS_THROUGH=true");
 		String propsAndParams = String.format("wrapper.logfile.loglevel=NONE wrapper.console.title=\"OneDev %s\" wrapper.pidfile=onedev_%s.pid wrapper.name=onedev_%s wrapper.displayname=\"OneDev %s\" wrapper.description=\"OneDev %s\" -- %s", 
 				commandDisplayName, commandName, commandName, commandDisplayName, commandDisplayName, commandName);
 		filterSet.addFilter("properties_and_parameters", propsAndParams);
@@ -97,8 +98,8 @@ public class PackageArtifactsMojo extends AbstractMojo {
 		filterSet.addFilter("set_fixed_command", "FIXED_COMMAND=console");
 		filterSet.addFilter("set_pass_through", "PASS_THROUGH=true");
 		
-		String propsAndParams = String.format("wrapper.logfile.loglevel=NONE wrapper.console.title='OneDev %s' wrapper.name=onedev_%s wrapper.displayname='OneDev %s' wrapper.description='OneDev %s' -- %s", 
-				commandDisplayName, commandName, commandDisplayName, commandDisplayName, commandName);
+		String propsAndParams = String.format("wrapper.logfile.loglevel=NONE wrapper.console.title='OneDev %s' wrapper.description='OneDev %s' -- %s", 
+				commandDisplayName, commandName, commandName);
 		filterSet.addFilter("properties_and_parameters", propsAndParams);
 		copy.execute();
     }
@@ -183,6 +184,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					copy.setFile(new File(jswDir, "AppCommand.bat.in"));
 					FilterSet filterSet = copy.createFilterSet();
 					filterSet.addFilter("set_fixed_command", "");
+					filterSet.addFilter("set_pass_through", "");
 					filterSet.addFilter("properties_and_parameters", "wrapper.pidfile=../status/onedev.pid");
 					copy.execute();
 	
