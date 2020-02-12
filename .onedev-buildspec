@@ -5,14 +5,12 @@
         <io.onedev.server.buildspec.job.Job>
             <name>Release</name>
             <paramSpecs/>
-            <image>@scripts:builtin:maven:determine-docker-image@</image>
+            <image>1dev/build-environment:1.1</image>
             <commands>
                 <string>set -e</string>
-                <string>rm -rf ~/.m2/repository/io/onedev # force to re-download dependencies as sometimes we may forget to increase project versions</string>
                 <string>echo "Detecting project version (may require some time while downloading maven dependencies)..."</string>
                 <string>buildVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout)</string>
                 <string>echo "##onedev[SetBuildVersion '$buildVersion']"</string>
-                <string>cp settings.xml /root/.m2/</string>
                 <string>mvn clean deploy -Dmaven.deploy.password=@secrets:maven-deploy-password@</string>
             </commands>
             <retrieveSource>true</retrieveSource>
@@ -22,9 +20,6 @@
             <services/>
             <reports/>
             <triggers>
-                <io.onedev.server.buildspec.job.trigger.BranchUpdateTrigger>
-                    <params/>
-                </io.onedev.server.buildspec.job.trigger.BranchUpdateTrigger>
                 <io.onedev.server.buildspec.job.trigger.BranchUpdateTrigger>
                     <params/>
                     <branches>master</branches>
