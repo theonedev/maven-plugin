@@ -1,0 +1,47 @@
+version: 1
+jobs:
+- name: Release
+  image: 1dev/build-environment:1.1
+  commands:
+  - set -e
+  - echo "Detecting project version (may require some time while downloading maven
+    dependencies)..."
+  - buildVersion=$(mvn org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version
+    -q -DforceStdout)
+  - echo "##onedev[SetBuildVersion '$buildVersion']"
+  - mvn clean deploy -Dmaven.deploy.password=@secrets:maven-deploy-password@
+  triggers:
+  - !BranchUpdateTrigger
+    branches: master
+  retrieveSource: true
+  cloneCredential: !DefaultCredential {}
+  cpuRequirement: 250m
+  memoryRequirement: 128m
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  caches:
+  - key: maven-cache
+    path: /root/.m2/repository
+  timeout: 3600
+  postBuildActions:
+  - !CreateTagAction
+    condition: successful
+    tagName: v@build_version@
+- name: Sync with GitHub
+  image: alpine/git:1.0.7
+  commands:
+  - git config --global --unset http.extraHeader
+  - git push https://robinshine:@secrets:github-token@\@github.com/theonedev/maven-plugin
+    HEAD:master
+  triggers:
+  - !BranchUpdateTrigger
+    branches: master
+  retrieveSource: true
+  cloneCredential: !DefaultCredential {}
+  cpuRequirement: 250m
+  memoryRequirement: 128m
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 3600
