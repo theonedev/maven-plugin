@@ -12,7 +12,7 @@ jobs:
   - mvn clean deploy -Dmaven.deploy.password=@secrets:maven-deploy-password@
   triggers:
   - !BranchUpdateTrigger
-    branches: master
+    branches: main
   retrieveSource: true
   cloneCredential: !DefaultCredential {}
   cpuRequirement: 250m
@@ -33,10 +33,10 @@ jobs:
   commands:
   - git config --global --unset http.extraHeader
   - git push https://robinshine:@secrets:github-token@\@github.com/theonedev/maven-plugin
-    HEAD:master
+    HEAD:main
   triggers:
   - !BranchUpdateTrigger
-    branches: master
+    branches: main
   retrieveSource: true
   cloneCredential: !DefaultCredential {}
   cpuRequirement: 250m
