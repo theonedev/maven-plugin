@@ -90,7 +90,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 		Copy copy = new Copy();
 		copy.setProject(antProject);
 		copy.setTofile(new File(sandboxDir, "bin/" + commandName + ".sh"));
-		copy.setFile(new File(project.getBasedir(), "jsw/sh.script.in"));
+		copy.setFile(new File(project.getBasedir(), "jsw/App.sh.in"));
 		FilterSet filterSet = copy.createFilterSet();
 		filterSet.addFilter("app.name", "onedev_" + commandName);
 		filterSet.addFilter("app.long.name", "OneDev " + commandDisplayName);
@@ -151,13 +151,34 @@ public class PackageArtifactsMojo extends AbstractMojo {
 				PluginUtils.populateArtifacts(project, sandboxDir, repoSystem, repoSession, remoteRepos);
 	
 				if (productPropsFile.exists()) {
+					File jswDir = new File(project.getBasedir(), "jsw");
+					File deltaPackFile = null;
+					for (File file: jswDir.listFiles()) {
+						if (file.getName().startsWith("wrapper-delta-pack-") && file.getName().endsWith(".zip")) {
+							deltaPackFile = file;
+							break;
+						}
+					}
+					if (deltaPackFile == null)
+						throw new RuntimeException("Unable to find file " + jswDir.getAbsolutePath() + "/wrapper-delta-pack-<version>-st.zip");
+					
 					Expand expand = new Expand();
 					expand.setProject(antProject);
-					expand.setSrc(new File(project.getBasedir(), "jsw/wrapper-delta-pack.zip"));
-					File jswDir = new File(project.getBasedir(), "jsw");
-					File wrapperDir = new File(buildDir, "wrapper");
-					expand.setDest(wrapperDir);
+					
+					expand.setSrc(deltaPackFile);
+					File extractDir = new File(buildDir, "extract");
+					expand.setDest(extractDir);
 					expand.execute();
+					
+					File wrapperDir = null;
+					for (File file: extractDir.listFiles()) {
+						if (file.getName().startsWith("wrapper-delta-pack-")) {
+							wrapperDir = file;
+							break;
+						}
+					}
+					if (wrapperDir == null)
+						throw new RuntimeException("Unable to find wrapper delta pack directory under " + extractDir.getAbsolutePath());
 					
 					File bootDir = new File(sandboxDir, "boot");
 					Copy copy = new Copy();
@@ -201,7 +222,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					
 					copy = new Copy();
 					copy.setTofile(new File(binDir, "server.sh"));
-					copy.setFile(new File(jswDir, "sh.script.in"));
+					copy.setFile(new File(jswDir, "App.sh.in"));
 					filterSet = copy.createFilterSet();
 					filterSet.addConfiguredFilterSet(appFilterSet);
 					filterSet.addFilter("set_fixed_command", "");
