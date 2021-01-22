@@ -32,7 +32,7 @@ jobs:
   image: alpine/git:1.0.7
   commands:
   - git config --global --unset http.extraHeader
-  - git push https://robinshine:@secrets:github-token@\@github.com/theonedev/maven-plugin
+  - git push https://robinshine:@secrets:github-token@@@github.com/theonedev/maven-plugin
     HEAD:main
   triggers:
   - !BranchUpdateTrigger
