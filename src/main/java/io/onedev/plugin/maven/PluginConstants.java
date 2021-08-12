@@ -16,4 +16,6 @@ public class PluginConstants {
 	
 	public static final String BOOTSTRAP_PROPERTY_FILE = "META-INF/onedev-bootstrap.properties";
 	
+	public static final String AGENT_PROPERTY_FILE = "META-INF/onedev-agent.properties";
+	
 }
