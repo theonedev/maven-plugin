@@ -193,7 +193,7 @@ public class PopulateResourcesMojo extends AbstractMojo {
     					destFile.setLastModified(file.lastModified());
     				}
     	    	}
-
+    	    	
     			try {
     				File versionFile = new File(sandboxDir, "version.txt");
     				if (!versionFile.exists() || !project.getVersion().equals(FileUtils.fileRead(versionFile).trim())) {

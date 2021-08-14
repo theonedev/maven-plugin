@@ -243,6 +243,21 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					copy.createFilterSet().addConfiguredFilterSet(appFilterSet);
 					copy.execute();
 					
+					copy = new Copy();
+					copy.setProject(antProject);
+					copy.setTofile(new File(sandboxDir, "conf/wrapper-license.conf"));
+					copy.setFile(new File(jswDir, "wrapper-license.conf"));
+					copy.execute();
+					
+					copy = new Copy();
+					copy.setProject(PluginUtils.newAntProject(getLog()));
+					copy.setTodir(new File(sandboxDir, "agent"));
+					
+					fileSet = new FileSet();
+					fileSet.setDir(new File(jswDir, "agent"));
+					copy.addFileset(fileSet);
+					copy.execute();
+					
 					Chmod chmod = new Chmod();
 					chmod.setProject(PluginUtils.newAntProject(getLog()));
 					chmod.setDir(sandboxDir);
