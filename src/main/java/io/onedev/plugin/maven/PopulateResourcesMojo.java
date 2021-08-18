@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -24,6 +26,8 @@ import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
+
+import com.google.common.base.Splitter;
 
 /**
  * @goal populate-resources
@@ -157,6 +161,35 @@ public class PopulateResourcesMojo extends AbstractMojo {
     		
     		File sandboxDir = new File(buildDir, PluginConstants.SANDBOX);
     		if (executables != null) {
+    			Properties agentProps = null;
+    	    	for (Artifact artifact: project.getArtifacts()) {
+    	    		if (PluginUtils.isRuntimeArtifact(artifact)) {
+	    	    		agentProps = PluginUtils.loadProperties(
+	    	    				artifact.getFile(), PluginConstants.AGENT_PROPERTY_FILE);
+	    	    		if (agentProps != null) 
+	    	    			break;
+    	    		}
+    	    	}
+    	    	if (agentProps != null) {
+    	    		Map<String, String> agentDependencyVersions = new HashMap<>();
+    	    		for (String dependency: Splitter.on(";").omitEmptyStrings().split(agentProps.getProperty("dependencies"))) {
+    	    			int index = dependency.indexOf(':');
+    	    			agentDependencyVersions.put(dependency.substring(0, index), dependency.substring(index+1));
+    	    		}
+        	    	for (Artifact artifact: project.getArtifacts()) {
+        	    		if (PluginUtils.isRuntimeArtifact(artifact)) {
+            	    		String dependency = artifact.getGroupId() + "." + artifact.getArtifactId();
+            	    		String version = agentDependencyVersions.get(dependency);
+            	    		if (version != null && !version.equals(artifact.getVersion())) { 
+            	    			String errorMessage = String.format(
+            	    					"Inconsistent dependency version in agent and product (groupId: %s, artifactId: %s, version in agent: %s, version in product: %s)", 
+            	    					artifact.getGroupId(), artifact.getArtifactId(), version, artifact.getVersion());
+            	    			throw new RuntimeException(errorMessage);
+            	    		}
+        	    		}
+        	    	}    	    		
+    	    	}
+    	    	
     	    	props = new Properties();
     	    	props.put("executables", executables);
 

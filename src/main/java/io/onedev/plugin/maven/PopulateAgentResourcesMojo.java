@@ -37,8 +37,9 @@ public class PopulateAgentResourcesMojo extends AbstractMojo {
         	StringBuffer buffer = new StringBuffer();
         	for (Artifact artifact: project.getArtifacts()) {
         		if (PluginUtils.isRuntimeArtifact(artifact)) {
-    	    		buffer.append(artifact.getGroupId()).append(".").append(artifact.getArtifactId())
-    	    			.append("-").append(artifact.getVersion()).append(";");
+    	    		buffer.append(artifact.getGroupId()).append(".")
+    	    				.append(artifact.getArtifactId()).append(":")
+    	    				.append(artifact.getVersion()).append(";");
         		}
         	}
         	props.put("dependencies", buffer.toString());

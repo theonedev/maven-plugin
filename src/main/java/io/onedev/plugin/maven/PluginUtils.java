@@ -122,8 +122,8 @@ public class PluginUtils {
 	}
 
 	public static boolean isRuntimeArtifact(Artifact artifact) {
-		return artifact.getScope().equals(Artifact.SCOPE_COMPILE) || artifact.getScope().equals(Artifact.SCOPE_RUNTIME) 
-				|| artifact.getScope().equals(Artifact.SCOPE_SYSTEM);
+		return !artifact.hasClassifier() && 
+				(artifact.getScope().equals(Artifact.SCOPE_COMPILE) || artifact.getScope().equals(Artifact.SCOPE_RUNTIME) || artifact.getScope().equals(Artifact.SCOPE_SYSTEM));
 	}
 	
 	public static void writeClasspath(File file, MavenProject project, RepositorySystem repoSystem, 
