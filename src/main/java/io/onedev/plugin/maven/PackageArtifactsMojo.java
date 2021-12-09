@@ -79,6 +79,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 		FilterSet filterSet = copy.createFilterSet();
 		filterSet.addFilter("set_fixed_command", "set _FIXED_COMMAND=console");
 		filterSet.addFilter("set_pass_through", "set _PASS_THROUGH=true");
+		filterSet.addFilter("passthrough_parameters", "");
 		String propsAndParams = String.format("wrapper.logfile.loglevel=NONE wrapper.console.title=\"OneDev %s\" wrapper.pidfile=onedev_%s.pid wrapper.name=onedev_%s wrapper.displayname=\"OneDev %s\" wrapper.description=\"OneDev %s\" -- %s", 
 				commandDisplayName, commandName, commandName, commandDisplayName, commandDisplayName, commandName);
 		filterSet.addFilter("properties_and_parameters", propsAndParams);
@@ -166,19 +167,19 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					expand.setProject(antProject);
 					
 					expand.setSrc(deltaPackFile);
-					File extractDir = new File(buildDir, "extract");
-					expand.setDest(extractDir);
+					File jswExtractDir = new File(buildDir, "jsw");
+					expand.setDest(jswExtractDir);
 					expand.execute();
 					
 					File wrapperDir = null;
-					for (File file: extractDir.listFiles()) {
+					for (File file: jswExtractDir.listFiles()) {
 						if (file.getName().startsWith("wrapper-delta-pack-")) {
 							wrapperDir = file;
 							break;
 						}
 					}
 					if (wrapperDir == null)
-						throw new RuntimeException("Unable to find wrapper delta pack directory under " + extractDir.getAbsolutePath());
+						throw new RuntimeException("Unable to find wrapper delta pack directory under " + jswExtractDir.getAbsolutePath());
 					
 					File bootDir = new File(sandboxDir, "boot");
 					Copy copy = new Copy();
@@ -207,6 +208,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					filterSet.addFilter("set_fixed_command", "");
 					filterSet.addFilter("set_pass_through", "");
 					filterSet.addFilter("properties_and_parameters", "wrapper.pidfile=../status/onedev.pid");
+					filterSet.addFilter("passthrough_parameters", "");
 					copy.execute();
 	
 					copyBatchCommand(antProject, "restore-db", "Restore Database");
@@ -215,16 +217,20 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					copyBatchCommand(antProject, "apply-db-constraints", "Apply DB Constraints");
 					copyBatchCommand(antProject, "reset-admin-password", "Reset Admin Password");
 					
-					FilterSet appFilterSet = new FilterSet();
-					appFilterSet.addFilter("app.name", "onedev");
-					appFilterSet.addFilter("app.long.name", "OneDev");
-					appFilterSet.addFilter("app.description", "OneDev");
+					FilterSet serverFilterSet = new FilterSet();
+					serverFilterSet.addFilter("classpath2", "");
+					serverFilterSet.addFilter("maxmemory.value", "");
+					serverFilterSet.addFilter("maxmemory.percent", "wrapper.java.maxmemory.percent=60");
+					serverFilterSet.addFilter("bootstrap.class", "io.onedev.commons.bootstrap.Bootstrap");
+					serverFilterSet.addFilter("app.name", "onedev");
+					serverFilterSet.addFilter("app.long.name", "OneDev");
+					serverFilterSet.addFilter("app.description", "OneDev");
 					
 					copy = new Copy();
 					copy.setTofile(new File(binDir, "server.sh"));
 					copy.setFile(new File(jswDir, "App.sh.in"));
 					filterSet = copy.createFilterSet();
-					filterSet.addConfiguredFilterSet(appFilterSet);
+					filterSet.addConfiguredFilterSet(serverFilterSet);
 					filterSet.addFilter("set_fixed_command", "");
 					filterSet.addFilter("set_pass_through", "");
 					filterSet.addFilter("properties_and_parameters", "--");
@@ -240,24 +246,60 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					copy.setProject(antProject);
 					copy.setTofile(new File(sandboxDir, "conf/wrapper.conf"));
 					copy.setFile(new File(jswDir, "wrapper.conf"));
-					copy.createFilterSet().addConfiguredFilterSet(appFilterSet);
+					copy.createFilterSet().addConfiguredFilterSet(serverFilterSet);
 					copy.execute();
 					
 					copy = new Copy();
 					copy.setProject(antProject);
 					copy.setTofile(new File(sandboxDir, "conf/wrapper-license.conf"));
-					copy.setFile(new File(jswDir, "wrapper-license.conf"));
+					copy.setFile(new File(jswDir, "server-license.conf"));
+					copy.execute();
+					
+					FilterSet agentFilterSet = new FilterSet();
+					agentFilterSet.addFilter("classpath2", "wrapper.java.classpath.2=../lib/agentVersion/*.jar");
+					agentFilterSet.addFilter("maxmemory.value", "wrapper.java.maxmemory=1024");
+					agentFilterSet.addFilter("maxmemory.percent", "");
+					agentFilterSet.addFilter("bootstrap.class", "io.onedev.agent.Agent");
+					agentFilterSet.addFilter("app.name", "onedevagent");
+					agentFilterSet.addFilter("app.long.name", "OneDev Agent");
+					agentFilterSet.addFilter("app.description", "OneDev Agent");
+					
+					File agentDir = new File(sandboxDir, "agent");
+					
+					copy = new Copy();
+					copy.setProject(antProject);
+					copy.setTofile(new File(agentDir, "bin/agent.bat"));
+					copy.setFile(new File(jswDir, "AppCommand.bat.in"));
+					filterSet = copy.createFilterSet();
+					filterSet.addFilter("set_fixed_command", "");
+					filterSet.addFilter("set_pass_through", "set _PASS_THROUGH=app_args");
+					filterSet.addFilter("properties_and_parameters", "");
+					filterSet.addFilter("passthrough_parameters", "set _PARAMETERS=--");
 					copy.execute();
 					
 					copy = new Copy();
-					copy.setProject(PluginUtils.newAntProject(getLog()));
-					copy.setTodir(new File(sandboxDir, "agent"));
-					
-					fileSet = new FileSet();
-					fileSet.setDir(new File(jswDir, "agent"));
-					copy.addFileset(fileSet);
+					copy.setTofile(new File(agentDir, "bin/agent.sh"));
+					copy.setFile(new File(jswDir, "App.sh.in"));
+					filterSet = copy.createFilterSet();
+					filterSet.addConfiguredFilterSet(agentFilterSet);
+					filterSet.addFilter("set_fixed_command", "");
+					filterSet.addFilter("set_pass_through", "");
+					filterSet.addFilter("properties_and_parameters", "--");
 					copy.execute();
 					
+					copy = new Copy();
+					copy.setProject(antProject);
+					copy.setTofile(new File(agentDir, "conf/wrapper.conf"));
+					copy.setFile(new File(jswDir, "wrapper.conf"));
+					copy.createFilterSet().addConfiguredFilterSet(agentFilterSet);
+					copy.execute();
+					
+					copy = new Copy();
+					copy.setProject(antProject);
+					copy.setTofile(new File(agentDir, "conf/wrapper-license.conf"));
+					copy.setFile(new File(jswDir, "agent-license.conf"));
+					copy.execute();
+										
 					Chmod chmod = new Chmod();
 					chmod.setProject(PluginUtils.newAntProject(getLog()));
 					chmod.setDir(sandboxDir);
