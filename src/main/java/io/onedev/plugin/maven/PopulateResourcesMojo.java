@@ -270,6 +270,14 @@ public class PopulateResourcesMojo extends AbstractMojo {
 	    	    	    		}
 	    	    			}
 	    	    	    	File bootDir = new File(sandboxDir, "boot");
+	    	    	    	
+	    	    	    	Set<String> bootstrapKeys = new HashSet<String>();
+
+	    	    	    	for (Artifact bootstrapArtifact: PluginUtils.getBootstrapArtifacts(project, repoSystem, repoSession, remoteRepos))
+	    	    	    		bootstrapKeys.add(PluginUtils.getArtifactKey(bootstrapArtifact));
+	    	    	    	
+	    	    	    	PluginUtils.writeObject(new File(bootDir, PluginConstants.BOOTSTRAP_KEYS), bootstrapKeys);
+	    	    	    	
 	    	    	    	PluginUtils.writeClasspath(new File(bootDir, PluginConstants.SYSTEM_CLASSPATH), project, 
 	    	    	    			repoSystem, repoSession, remoteRepos);
 	    	    			break;
