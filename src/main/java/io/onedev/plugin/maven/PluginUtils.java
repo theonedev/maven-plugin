@@ -1,5 +1,7 @@
 package io.onedev.plugin.maven;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -19,6 +21,8 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
+
+import javax.annotation.Nullable;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
@@ -43,6 +47,8 @@ import org.eclipse.aether.resolution.DependencyRequest;
 
 public class PluginUtils {
 	
+	public static final int BUFFER_SIZE = 16*1024;
+	
 	public static boolean containsFile(File file, String path) {
 		if (file.isFile() && file.getName().endsWith(".jar")) {
 			JarFile jar = null;
@@ -66,25 +72,44 @@ public class PluginUtils {
 		}
 	}
 	
-	public static Properties loadProperties(File file, String path) {
+	public static Properties readProperties(File file, String path) {
+		byte[] bytes = readBytes(file, path);
+		if (bytes != null) {
+			Properties props = new Properties();
+			try {
+				props.load(new ByteArrayInputStream(bytes));
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			return props;
+		} else {
+			return null;
+		}
+	}
+	
+	private static byte[] readBytes(InputStream is) {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		byte[] buffer = new byte[BUFFER_SIZE];
+		int nRead;
+		try {
+			while ((nRead = is.read(buffer, 0, buffer.length)) != -1) 
+			  baos.write(buffer, 0, nRead);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return baos.toByteArray();
+	}
+	
+	@Nullable
+	public static byte[] readBytes(File file, String path) {
 		if (file.isFile() && file.getName().endsWith(".jar")) {
 			JarFile jar = null;
 			try {
 				jar = new JarFile(file);
 				JarEntry entry = jar.getJarEntry(path);
 				if (entry != null) {
-					InputStream is = null;
-					try {
-						is = jar.getInputStream(entry);
-						Properties props = new Properties();
-						props.load(is);
-						return props;
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					} finally {
-						if (is != null) {
-							is.close();
-						}
+					try (InputStream is = jar.getInputStream(entry)) {
+						return readBytes(is);
 					}
 				} else {
 					return null;
@@ -100,21 +125,10 @@ public class PluginUtils {
 				}
 			}
 		} else if (file.isDirectory() && new File(file, path).exists()) {
-			Properties props = new Properties();
-			InputStream is = null;
-			try {
-				is = new FileInputStream(new File(file, path));
-				props.load(is);
-				return props;
+			try (InputStream is = new FileInputStream(new File(file, path))) {
+				return readBytes(is);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
-			} finally {
-				if (is != null) {
-					try {
-						is.close();
-					} catch (IOException e) {
-					}
-				}
 			}
 		} else {
 			return null;
@@ -528,4 +542,5 @@ public class PluginUtils {
 		}
 	}
 
+	
 }

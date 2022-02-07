@@ -164,7 +164,7 @@ public class PopulateResourcesMojo extends AbstractMojo {
     			Properties agentProps = null;
     	    	for (Artifact artifact: project.getArtifacts()) {
     	    		if (PluginUtils.isRuntimeArtifact(artifact)) {
-	    	    		agentProps = PluginUtils.loadProperties(
+	    	    		agentProps = PluginUtils.readProperties(
 	    	    				artifact.getFile(), PluginConstants.AGENT_PROPERTY_FILE);
 	    	    		if (agentProps != null) 
 	    	    			break;
@@ -242,7 +242,7 @@ public class PopulateResourcesMojo extends AbstractMojo {
     		} else {
     	    	for (Artifact artifact: project.getArtifacts()) {
     	    		if (PluginUtils.isRuntimeArtifact(artifact)) {
-	    	    		Properties productProps = PluginUtils.loadProperties(
+	    	    		Properties productProps = PluginUtils.readProperties(
 	    	    				artifact.getFile(), PluginConstants.PRODUCT_PROPERTY_FILE);
 	    	    		if (productProps != null) {
 	    	    			if (!sandboxDir.exists()) {

@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -24,10 +26,15 @@ import org.apache.tools.ant.types.ZipFileSet;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
 import org.codehaus.plexus.archiver.manager.NoSuchArchiverException;
+import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.IOUtil;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
+
+import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
+import com.google.common.io.Files;
 
 /**
  * @goal package-artifacts
@@ -301,7 +308,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					copy.execute();
 										
 					Chmod chmod = new Chmod();
-					chmod.setProject(PluginUtils.newAntProject(getLog()));
+					chmod.setProject(antProject);
 					chmod.setDir(sandboxDir);
 					chmod.setPerm("755");
 		    		Properties productProps = PluginUtils.loadProperties(productPropsFile);
@@ -311,7 +318,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					
 					String prefix = "onedev-" + project.getVersion();
 					Zip zip = new Zip();
-					zip.setProject(PluginUtils.newAntProject(getLog()));
+					zip.setProject(antProject);
 					
 					zip.setDestFile(new File(project.getBuild().getDirectory(), prefix + ".zip"));
 					
@@ -329,7 +336,96 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					zip.addZipfileset(zipFileSet);
 					
 					zip.execute();
-				} else {
+					
+					try {
+						FileUtils.copyDirectoryStructure(agentDir, new File(buildDir, "agent"));
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+
+					agentDir = new File(buildDir, "agent");
+					
+					File agentBootDir = new File(agentDir, "boot");
+					for (File file: bootDir.listFiles()) {
+						if (file.getName().startsWith("libwrapper-") 
+								|| file.getName().startsWith("wrapper-") 
+								|| file.getName().equals("wrapper.jar")) {
+							try {
+								FileUtils.copyFileToDirectory(file, agentBootDir);
+							} catch (IOException e) {
+								throw new RuntimeException(e);
+							}
+						}
+					}
+
+					Artifact agentArtifact = null;
+	    	    	for (Artifact artifact: project.getArtifacts()) {
+	    	    		if (PluginUtils.isRuntimeArtifact(artifact) && artifact.getGroupId().equals("io.onedev") && 
+	    	    				artifact.getArtifactId().equals("agent")) {
+	    	    			agentArtifact = artifact;
+	    	    			break;
+	    	    		}
+	    	    	}
+	    	    	if (agentArtifact == null)
+	    	    		throw new RuntimeException("Unable to find agent artifact");
+
+    	    		Properties agentProps = Preconditions.checkNotNull(PluginUtils.readProperties(
+    	    				agentArtifact.getFile(), PluginConstants.AGENT_PROPERTY_FILE));
+	    	    	
+    	    		Set<String> agentDependencies = new HashSet<>();
+    	    		for (String dependency: Splitter.on(";").omitEmptyStrings().split(agentProps.getProperty("dependencies"))) {
+    	    			int index = dependency.indexOf(':');
+    	    			agentDependencies.add(dependency.substring(0, index));
+    	    		}
+    	    		
+					File agentLibDir = new File(agentDir, "lib");
+					try {
+						FileUtils.copyFileToDirectory(agentArtifact.getFile(), new File(agentLibDir, agentArtifact.getVersion()));
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+        	    	for (Artifact artifact: project.getArtifacts()) {
+        	    		if (PluginUtils.isRuntimeArtifact(artifact)) {
+            	    		if (agentDependencies.contains(artifact.getGroupId() + "." + artifact.getArtifactId())) { 
+    							try {
+									FileUtils.copyFileToDirectory(artifact.getFile(), new File(agentLibDir, agentArtifact.getVersion()));
+								} catch (IOException e) {
+									throw new RuntimeException(e);
+								}
+            	    		}
+        	    		}
+        	    	}    	    
+
+        	    	try {
+						File agentConfFile = new File(agentDir, "conf/wrapper.conf");
+						String wrapperConfContent = FileUtils.fileRead(agentConfFile);
+						wrapperConfContent = wrapperConfContent.replace("agentVersion", agentArtifact.getVersion());
+						FileUtils.fileWrite(agentConfFile, wrapperConfContent);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+	    	    	
+        	    	try {
+            	    	byte[] logbackConfBytes = Preconditions.checkNotNull(
+            	    			PluginUtils.readBytes(agentArtifact.getFile(), "agent/conf/logback.xml"));
+						Files.write(logbackConfBytes, new File(agentDir, "conf/logback.xml"));
+						byte[] agentPropsBytes = Preconditions.checkNotNull(
+            	    			PluginUtils.readBytes(agentArtifact.getFile(), "agent/conf/agent.properties"));
+						Files.write(agentPropsBytes, new File(agentDir, "conf/agent.properties"));
+						Files.touch(new File(agentDir, "conf/attributes.properties"));
+						new File(agentDir, "logs").mkdir();
+						Files.touch(new File(agentDir, "logs/console.log"));						
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+        	    	
+					chmod = new Chmod();
+					chmod.setProject(antProject);
+					chmod.setDir(agentDir);
+					chmod.setPerm("755");
+					chmod.setIncludes(executables);
+					chmod.execute();
+	    	    } else {
 					Archiver archiver;
 					try {
 						archiver = archiverManager.getArchiver("zip");
