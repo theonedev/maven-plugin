@@ -226,8 +226,8 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					
 					FilterSet serverFilterSet = new FilterSet();
 					serverFilterSet.addFilter("classpath2", "");
-					serverFilterSet.addFilter("maxmemory.value", "");
-					serverFilterSet.addFilter("maxmemory.percent", "wrapper.java.maxmemory.percent=60");
+					serverFilterSet.addFilter("maxmemory.value", "#wrapper.java.maxmemory=1024");
+					serverFilterSet.addFilter("maxmemory.percent", "wrapper.java.maxmemory.percent=50");
 					serverFilterSet.addFilter("bootstrap.class", "io.onedev.commons.bootstrap.Bootstrap");
 					serverFilterSet.addFilter("app.name", "onedev");
 					serverFilterSet.addFilter("app.long.name", "OneDev");
