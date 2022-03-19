@@ -88,7 +88,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 		filterSet.addFilter("set_pass_through", "set _PASS_THROUGH=true");
 		filterSet.addFilter("passthrough_parameters", "");
 		String propsAndParams = String.format("wrapper.logfile.loglevel=NONE wrapper.console.title=\"OneDev %s\" wrapper.name=onedev_%s wrapper.displayname=\"OneDev %s\" wrapper.description=\"OneDev %s\" -- %s", 
-				commandDisplayName, commandName, commandName, commandDisplayName, commandDisplayName, commandName);
+				commandDisplayName, commandName, commandDisplayName, commandDisplayName, commandName);
 		filterSet.addFilter("properties_and_parameters", propsAndParams);
 		copy.execute();
     }
