@@ -1,10 +1,16 @@
 package io.onedev.plugin.maven;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -16,8 +22,6 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
-import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.taskdefs.Echo;
 import org.codehaus.plexus.archiver.UnArchiver;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
 import org.codehaus.plexus.archiver.manager.NoSuchArchiverException;
@@ -26,6 +30,7 @@ import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.jgit.api.Git;
 
 import com.google.common.base.Splitter;
 
@@ -226,19 +231,48 @@ public class PopulateResourcesMojo extends AbstractMojo {
     					destFile.setLastModified(file.lastModified());
     				}
     	    	}
-    	    	
-    			try {
-    				File versionFile = new File(sandboxDir, "version.txt");
-    				if (!versionFile.exists() || !project.getVersion().equals(FileUtils.fileRead(versionFile).trim())) {
-    					Echo echo = new Echo();
-    					echo.setProject(PluginUtils.newAntProject(getLog()));
-    					echo.setFile(versionFile);
-    					echo.setMessage(project.getVersion());
-    					echo.execute();
+
+    	    	Properties releaseProps = new Properties();
+    	    	File gitDir = new File(project.getBasedir().getParentFile(), ".git");
+    	    	if (gitDir.exists()) {
+        	    	try (Git git = Git.open(gitDir)) {
+        	    		releaseProps.put("commit", git.getRepository().resolve("HEAD").name());
+        	    	} catch (IOException e) {
+        	    		throw new RuntimeException(e);
     				}
-    			} catch (BuildException | IOException e) {
-    				throw new RuntimeException(e);
-    			}
+    	    	}
+    	    	
+    	    	File buildNumberFile = new File(project.getBasedir().getParentFile(), "build_number");
+    	    	if (buildNumberFile.exists()) {
+    	    		try {
+						releaseProps.put("build", FileUtils.fileRead(buildNumberFile).trim());
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+    	    	}
+    	    	
+    	    	releaseProps.put("date", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+    	    	releaseProps.put("version", project.getVersion());
+    	    	
+				File releasePropsFile = new File(sandboxDir, "release.properties");
+				if (releasePropsFile.exists()) {
+					try (InputStream is = new FileInputStream(releasePropsFile)) {
+						Properties oldReleaseProps = new Properties();
+						oldReleaseProps.load(is);
+						if (oldReleaseProps.equals(releaseProps))
+							releaseProps = null;
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				} 
+				
+				if (releaseProps != null) {
+					try (OutputStream os = new FileOutputStream(releasePropsFile)) {
+						releaseProps.store(os, null);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				}
     		} else {
     	    	for (Artifact artifact: project.getArtifacts()) {
     	    		if (PluginUtils.isRuntimeArtifact(artifact)) {
