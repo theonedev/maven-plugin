@@ -11,7 +11,7 @@ jobs:
   - !CommandStep
     name: detect build version
     runInContainer: true
-    image: 1dev/build-environment:1.1
+    image: 1dev/build-environment:1.4
     interpreter: !DefaultInterpreter
       commands:
       - set -e
