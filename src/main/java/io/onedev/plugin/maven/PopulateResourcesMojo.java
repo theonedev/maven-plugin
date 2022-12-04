@@ -18,9 +18,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import com.google.common.base.Splitter;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.archiver.UnArchiver;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
@@ -32,64 +37,46 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.jgit.api.Git;
 
-import com.google.common.base.Splitter;
-
 /**
- * @goal populate-resources
- * @requiresDependencyResolution compile+runtime
+ * Populate Resource Mojo.
  */
+@Mojo(name = "populate-resources", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
 public class PopulateResourcesMojo extends AbstractMojo {
 	
-	/**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-	 */
+	@Parameter( readonly = true, required = true, defaultValue = "${project}")
 	private MavenProject project;
 	
-	/**
-	 * @parameter default-value="${bootstrap}"
-	 */
+	@Parameter(defaultValue = "${bootstrap}")
 	private boolean bootstrap;
 
-	/**
-	 * @parameter default-value="${moduleClass}"
-	 */
+	@Parameter(defaultValue = "${moduleClass}")
 	private String moduleClass;
 	
-	/**
-	 * @parameter default-value="${executables}"
-	 */
+	@Parameter(defaultValue = "${executables}")
 	private String executables;
 	
     /**
      * The entry point to Aether, i.e. the component doing all the work.
-     *
-     * @component
      */
+	@Component
     private RepositorySystem repoSystem;
 
     /**
      * The current repository/network configuration of Maven.
-     *
-     * @parameter default-value="${repositorySystemSession}"
-     * @readonly
      */
+	@Parameter(readonly = true, required = true, defaultValue = "${repositorySystemSession}")
     private RepositorySystemSession repoSession;
 
     /**
      * The project's remote repositories to use for the resolution of project dependencies.
-     *
-     * @parameter default-value="${project.remoteProjectRepositories}"
-     * @readonly
      */
-    private List<RemoteRepository> remoteRepos; 	
+	@Parameter(readonly = true, defaultValue = "${project.remoteProjectRepositories}")
+    private List<RemoteRepository> remoteRepos;
     
-    /**
-	 * @component
-	 */
+	@Component
 	private ArchiverManager archiverManager;
-	
+
+	@Override
 	public void execute() throws MojoExecutionException {
     	if ("jar".equals(project.getPackaging())) {
 			PluginUtils.checkResolvedArtifacts(project, true);
