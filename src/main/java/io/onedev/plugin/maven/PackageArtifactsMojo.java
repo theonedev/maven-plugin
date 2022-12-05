@@ -15,6 +15,10 @@ import java.util.jar.Manifest;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.tools.ant.taskdefs.Chmod;
 import org.apache.tools.ant.taskdefs.Copy;
@@ -37,44 +41,33 @@ import com.google.common.base.Splitter;
 import com.google.common.io.Files;
 
 /**
- * @goal package-artifacts
- * @requiresDependencyResolution compile+runtime
+ * Package Artifacts Mojo.
  */
+@Mojo(name = "package-artifacts", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
 public class PackageArtifactsMojo extends AbstractMojo {
 	
-	/**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-	 */
+	@Parameter(required = true, readonly = true, defaultValue = "${project}")
 	private MavenProject project;
 	
-    /**
-     * @component
-     */
+	@Component
     private ArchiverManager archiverManager;    
 
     /**
      * The entry point to Aether, i.e. the component doing all the work.
-     *
-     * @component
      */
+	@Component
     private RepositorySystem repoSystem;
 
     /**
      * The current repository/network configuration of Maven.
-     *
-     * @parameter default-value="${repositorySystemSession}"
-     * @readonly
      */
+	@Parameter(readonly = true, defaultValue = "${repositorySystemSession}")
     private RepositorySystemSession repoSession;
 
     /**
      * The project's remote repositories to use for the resolution of project dependencies.
-     *
-     * @parameter default-value="${project.remoteProjectRepositories}"
-     * @readonly
      */
+	@Parameter(readonly = true, required = true, defaultValue = "${project.remoteProjectRepositories}")
     private List<RemoteRepository> remoteRepos; 	
 
     private void copyBatchCommand(org.apache.tools.ant.Project antProject, String commandName, String commandDisplayName) {

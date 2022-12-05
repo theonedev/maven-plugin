@@ -6,21 +6,21 @@ import java.util.Properties;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 /**
- * @goal populate-agent-resources
- * @requiresDependencyResolution compile+runtime
+ * Populate Agent Resources Mojo.
  */
+@Mojo(name = "populate-agent-resources", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
 public class PopulateAgentResourcesMojo extends AbstractMojo {
 	
-	/**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-	 */
+	@Parameter(readonly = true, required = true, defaultValue = "${project}")
 	private MavenProject project;
-	
+
+	@Override
 	public void execute() throws MojoExecutionException {
     	if ("jar".equals(project.getPackaging())) {
 			PluginUtils.checkResolvedArtifacts(project, true);
