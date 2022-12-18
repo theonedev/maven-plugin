@@ -31,7 +31,6 @@ import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
 import org.codehaus.plexus.archiver.manager.NoSuchArchiverException;
 import org.codehaus.plexus.util.FileUtils;
-import org.codehaus.plexus.util.IOUtil;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -119,11 +118,9 @@ public class PackageArtifactsMojo extends AbstractMojo {
 	
 			File sandboxDir = new File(buildDir, PluginConstants.SANDBOX);
 	
-			JarOutputStream jos = null;
-			try {
-				Manifest manifest = new Manifest();
-				manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-				jos = new JarOutputStream(new FileOutputStream(jarFile), manifest);
+			Manifest manifest = new Manifest();
+			manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+			try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(jarFile), manifest)) {
 				jos.setLevel(9);
 	
 		    	for (String path: PluginUtils.listFiles(outputDir, null, null)) {
@@ -141,8 +138,6 @@ public class PackageArtifactsMojo extends AbstractMojo {
 				}
 			} catch (IOException e) {
 				throw new RuntimeException(e);
-			} finally {
-				IOUtil.close(jos);
 			}
 			
 			project.getArtifact().setFile(jarFile);

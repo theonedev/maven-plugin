@@ -12,10 +12,10 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Populate Agent Resources Mojo.
+ * Generate Agent Resources Mojo.
  */
-@Mojo(name = "populate-agent-resources", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
-public class PopulateAgentResourcesMojo extends AbstractMojo {
+@Mojo(name = "generate-agent-resources", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
+public class GenerateAgentResourcesMojo extends AbstractMojo {
 	
 	@Parameter(readonly = true, required = true, defaultValue = "${project}")
 	private MavenProject project;

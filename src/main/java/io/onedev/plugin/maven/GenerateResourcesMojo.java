@@ -40,8 +40,8 @@ import org.eclipse.jgit.api.Git;
 /**
  * Populate Resource Mojo.
  */
-@Mojo(name = "populate-resources", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
-public class PopulateResourcesMojo extends AbstractMojo {
+@Mojo(name = "generate-resources", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME)
+public class GenerateResourcesMojo extends AbstractMojo {
 	
 	@Parameter( readonly = true, required = true, defaultValue = "${project}")
 	private MavenProject project;
@@ -76,6 +76,7 @@ public class PopulateResourcesMojo extends AbstractMojo {
 	@Component
 	private ArchiverManager archiverManager;
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void execute() throws MojoExecutionException {
     	if ("jar".equals(project.getPackaging())) {
@@ -92,7 +93,7 @@ public class PopulateResourcesMojo extends AbstractMojo {
         	props.put("version", project.getArtifact().getVersion());
         	
         	StringBuffer buffer = new StringBuffer();
-        	List<Artifact> dependencies = new ArrayList<>(project.getDependencyArtifacts());
+			List<Artifact> dependencies = new ArrayList<>(project.getDependencyArtifacts());
         	Collections.sort(dependencies, new Comparator<Artifact>() {
 
     			@Override

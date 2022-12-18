@@ -478,6 +478,7 @@ public class PluginUtils {
 		return fields;
 	}
 	
+	@SuppressWarnings("deprecation")
 	public static void checkResolvedArtifacts(MavenProject project, boolean onlyRuntime) {
 		for (Artifact artifact: project.getArtifacts()) {
 			if ((onlyRuntime && isRuntimeArtifact(artifact) || !onlyRuntime) && artifact.getFile() == null) {
@@ -526,12 +527,8 @@ public class PluginUtils {
 
 		if (file.isFile()) {
 			try {
-				FileInputStream is = null;
-				try {
-					is = new FileInputStream(file);
+				try (FileInputStream is = new FileInputStream(file)) {
 					IOUtil.copy(is, jos);
-				} finally {
-					IOUtil.close(is);
 				}
 
 				jos.flush();
