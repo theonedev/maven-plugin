@@ -7,17 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
@@ -81,9 +73,9 @@ public class GenerateResourcesMojo extends AbstractMojo {
 	public void execute() throws MojoExecutionException {
     	if ("jar".equals(project.getPackaging())) {
 			PluginUtils.checkResolvedArtifacts(project, true);
-			
+
 			File buildDir = new File(project.getBuild().getDirectory());
-	    	File outputDir = new File(project.getBuild().getOutputDirectory());
+	    	File outputDir = new File(project.getBuild().getDirectory(), "generated-resources");
     	
         	if (!outputDir.exists())
         		outputDir.mkdirs();
@@ -193,16 +185,6 @@ public class GenerateResourcesMojo extends AbstractMojo {
     	    	if (!bootDir.exists())
     	    		bootDir.mkdirs();
 
-    	    	Set<String> bootstrapKeys = new HashSet<String>();
-
-    	    	for (Artifact artifact: PluginUtils.getBootstrapArtifacts(project, repoSystem, repoSession, remoteRepos))
-    	    		bootstrapKeys.add(PluginUtils.getArtifactKey(artifact));
-    	    	
-    	    	PluginUtils.writeObject(new File(bootDir, PluginConstants.BOOTSTRAP_KEYS), bootstrapKeys);
-    	    	
-    	    	PluginUtils.writeClasspath(new File(bootDir, PluginConstants.SYSTEM_CLASSPATH), project, 
-    	    			repoSystem, repoSession, remoteRepos);
-
     	    	File systemDir = new File(project.getBasedir(), "system");
     	    	for (String path: PluginUtils.listFiles(systemDir, null, null)) {
     	    		File file = new File(systemDir, path);
@@ -291,17 +273,6 @@ public class GenerateResourcesMojo extends AbstractMojo {
 	    	    					}
 	    	    	    		}
 	    	    			}
-	    	    	    	File bootDir = new File(sandboxDir, "boot");
-	    	    	    	
-	    	    	    	Set<String> bootstrapKeys = new HashSet<String>();
-
-	    	    	    	for (Artifact bootstrapArtifact: PluginUtils.getBootstrapArtifacts(project, repoSystem, repoSession, remoteRepos))
-	    	    	    		bootstrapKeys.add(PluginUtils.getArtifactKey(bootstrapArtifact));
-	    	    	    	
-	    	    	    	PluginUtils.writeObject(new File(bootDir, PluginConstants.BOOTSTRAP_KEYS), bootstrapKeys);
-	    	    	    	
-	    	    	    	PluginUtils.writeClasspath(new File(bootDir, PluginConstants.SYSTEM_CLASSPATH), project, 
-	    	    	    			repoSystem, repoSession, remoteRepos);
 	    	    			break;
 	    	    		}
     	    		}

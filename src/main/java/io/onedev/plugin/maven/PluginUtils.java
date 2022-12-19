@@ -138,35 +138,17 @@ public class PluginUtils {
 	public static boolean isRuntimeArtifact(Artifact artifact) {
 		return !artifact.hasClassifier() && (artifact.getScope().equals(Artifact.SCOPE_COMPILE) || artifact.getScope().equals(Artifact.SCOPE_RUNTIME));
 	}
-	
-	public static void writeClasspath(File file, MavenProject project, RepositorySystem repoSystem, 
-			RepositorySystemSession repoSession, List<RemoteRepository> remoteRepos) throws MojoExecutionException {
-		
-    	Map<String, File> classpath = new HashMap<String, File>();
-    	
-    	for (Artifact artifact: project.getArtifacts()) { 
-    		if (isRuntimeArtifact(artifact)) 
-    			classpath.put(getArtifactKey(artifact), artifact.getFile());
-    	}
-    	
-    	for (Artifact artifact: getBootstrapArtifacts(project, repoSystem, repoSession, remoteRepos))
-    		classpath.put(getArtifactKey(artifact), artifact.getFile());
 
-    	classpath.put(getArtifactKey(project.getArtifact()), new File(project.getBuild().getOutputDirectory()));
-    	
-    	writeObject(file, classpath);
-	}
-	
-	public static Collection<Artifact> getBootstrapArtifacts(MavenProject project, RepositorySystem repoSystem, 
+	public static Collection<Artifact> getBootstrapArtifacts(MavenProject project, RepositorySystem repoSystem,
 			RepositorySystemSession repoSession, List<RemoteRepository> remoteRepos) {
 		Collection<Artifact> bootArtifacts = new HashSet<Artifact>();
 		for (Artifact each: project.getArtifacts()) {
 			if (containsFile(each.getFile(), PluginConstants.BOOTSTRAP_PROPERTY_FILE)) {
 				bootArtifacts.add(each);
 				org.eclipse.aether.artifact.Artifact aetherArtifact = new org.eclipse.aether.artifact.DefaultArtifact(
-						each.getGroupId(), each.getArtifactId(), each.getClassifier(), each.getType(), 
+						each.getGroupId(), each.getArtifactId(), each.getClassifier(), each.getType(),
 						each.getVersion());
-                CollectRequest collectRequest = new CollectRequest(new Dependency(aetherArtifact, null), 
+                CollectRequest collectRequest = new CollectRequest(new Dependency(aetherArtifact, null),
                 		new ArrayList<Dependency>(), remoteRepos);
                 DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, null);
                 try {
@@ -174,8 +156,8 @@ public class PluginUtils {
 						Dependency dependency = result.getRequest().getDependencyNode().getDependency();
 						if (dependency.getArtifact()  != null && dependency.getArtifact().getFile() != null) {
 							aetherArtifact = dependency.getArtifact();
-							Artifact artifact = new DefaultArtifact(aetherArtifact.getGroupId(), aetherArtifact.getArtifactId(), 
-									aetherArtifact.getVersion(), dependency.getScope(), 
+							Artifact artifact = new DefaultArtifact(aetherArtifact.getGroupId(), aetherArtifact.getArtifactId(),
+									aetherArtifact.getVersion(), dependency.getScope(),
 									aetherArtifact.getExtension(), aetherArtifact.getClassifier(), null);
 							artifact.setFile(aetherArtifact.getFile());
 							if (isRuntimeArtifact(artifact))
@@ -189,7 +171,7 @@ public class PluginUtils {
 		}
 		return bootArtifacts;
 	}
-	
+
 	public static Project newAntProject(Log log) {
 		Project antProject = new Project();
 		antProject.init();
@@ -251,17 +233,20 @@ public class PluginUtils {
 			bootDir.mkdirs();
 		if (!libDir.exists())
 			libDir.mkdirs();
-		
-		Set<String> bootstrapKeys = (Set<String>) readObject(
-				new File(bootDir, PluginConstants.BOOTSTRAP_KEYS));
+
+		Set<String> bootstrapKeys = new HashSet<String>();
+
+		Collection<Artifact> bootstrapArtifacts =
+				getBootstrapArtifacts(project, repoSystem, repoSession, remoteRepos);
+		for (var artifact: bootstrapArtifacts)
+			bootstrapKeys.add(getArtifactKey(artifact));
 
 		Set<Artifact> artifacts = new HashSet<Artifact>();
 		for (Artifact artifact: project.getArtifacts()) {
 			if (isRuntimeArtifact(artifact))
 				artifacts.add(artifact);
 		}
-		for (Artifact artifact: getBootstrapArtifacts(project, repoSystem, repoSession, remoteRepos))
-			artifacts.add(artifact);
+		artifacts.addAll(bootstrapArtifacts);
 		artifacts.add(project.getArtifact());
 		
     	for (Artifact artifact: artifacts) {
@@ -418,25 +403,6 @@ public class PluginUtils {
 				} catch (IOException e) {
 				}
 			}
-		}
-	}
-	
-	public static void writeObject(File file, Object obj) {
-		if (!file.exists() || !obj.equals(readObject(file))) {
-	    	ObjectOutputStream oos = null;
-	    	try {
-	    		oos = new ObjectOutputStream(new FileOutputStream(file));
-	    		oos.writeObject(obj);
-	    	} catch (Exception e) {
-	    		throw unchecked(e);
-			} finally {
-				if (oos != null) {
-					try {
-						oos.close();
-					} catch (IOException e) {
-					}
-				}
-	    	}
 		}
 	}
 	

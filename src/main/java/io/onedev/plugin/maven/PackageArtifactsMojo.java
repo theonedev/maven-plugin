@@ -130,8 +130,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 	
 				// include part of sandbox in product jar in order to generate run environment when develop standalone plugins
 		    	if (productPropsFile.exists()) { 
-			    	for (String path: PluginUtils.listFiles(sandboxDir, null, 
-			    			new String[]{"site/lib/*.jar", "boot/system.classpath"})) {
+			    	for (String path: PluginUtils.listFiles(sandboxDir, null, new String[]{"site/lib/*.jar"})) {
 			    		File file = new File(sandboxDir, path);
 						PluginUtils.addFileToJar(jos, file, PluginConstants.SANDBOX + "/" + path);
 			    	}
@@ -313,7 +312,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					ZipFileSet zipFileSet = new ZipFileSet();
 					zipFileSet.setDir(sandboxDir);
 					zipFileSet.setPrefix(prefix);
-					zipFileSet.setExcludes(executables + ", boot/system.classpath, site/lib/*.jar");
+					zipFileSet.setExcludes(executables + ", site/lib/*.jar");
 					zip.addZipfileset(zipFileSet);
 					
 					zipFileSet = new ZipFileSet();

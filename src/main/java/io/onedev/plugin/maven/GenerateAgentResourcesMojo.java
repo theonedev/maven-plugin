@@ -25,7 +25,7 @@ public class GenerateAgentResourcesMojo extends AbstractMojo {
     	if ("jar".equals(project.getPackaging())) {
 			PluginUtils.checkResolvedArtifacts(project, true);
 			
-	    	File outputDir = new File(project.getBuild().getOutputDirectory());
+	    	File outputDir = new File(project.getBuild().getDirectory(), "generated-resources");
     	
         	if (!outputDir.exists())
         		outputDir.mkdirs();
