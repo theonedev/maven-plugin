@@ -248,51 +248,54 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					copy.setTofile(new File(sandboxDir, "conf/wrapper-license.conf"));
 					copy.setFile(new File(jswDir, "server-license.conf"));
 					copy.execute();
-					
-					FilterSet agentFilterSet = new FilterSet();
-					agentFilterSet.addFilter("classpath2", "wrapper.java.classpath.2=../lib/agentVersion/*.jar");
-					agentFilterSet.addFilter("maxmemory.value", "wrapper.java.maxmemory=1024");
-					agentFilterSet.addFilter("maxmemory.percent", "");
-					agentFilterSet.addFilter("bootstrap.class", "io.onedev.agent.Agent");
-					agentFilterSet.addFilter("app.name", "onedevagent");
-					agentFilterSet.addFilter("app.long.name", "OneDev Agent");
-					agentFilterSet.addFilter("app.description", "OneDev Agent");
-					
-					File agentDir = new File(sandboxDir, "agent");
-					
-					copy = new Copy();
-					copy.setProject(antProject);
-					copy.setTofile(new File(agentDir, "bin/agent.bat"));
-					copy.setFile(new File(jswDir, "AppCommand.bat.in"));
-					filterSet = copy.createFilterSet();
-					filterSet.addFilter("set_fixed_command", "");
-					filterSet.addFilter("set_pass_through", "set _PASS_THROUGH=app_args");
-					filterSet.addFilter("properties_and_parameters", "");
-					filterSet.addFilter("passthrough_parameters", "set _PARAMETERS=--");
-					copy.execute();
-					
-					copy = new Copy();
-					copy.setTofile(new File(agentDir, "bin/agent.sh"));
-					copy.setFile(new File(jswDir, "App.sh.in"));
-					filterSet = copy.createFilterSet();
-					filterSet.addConfiguredFilterSet(agentFilterSet);
-					filterSet.addFilter("set_fixed_command", "");
-					filterSet.addFilter("set_pass_through", "");
-					filterSet.addFilter("properties_and_parameters", "--");
-					copy.execute();
-					
-					copy = new Copy();
-					copy.setProject(antProject);
-					copy.setTofile(new File(agentDir, "conf/wrapper.conf"));
-					copy.setFile(new File(jswDir, "wrapper.conf"));
-					copy.createFilterSet().addConfiguredFilterSet(agentFilterSet);
-					copy.execute();
-					
-					copy = new Copy();
-					copy.setProject(antProject);
-					copy.setTofile(new File(agentDir, "conf/wrapper-license.conf"));
-					copy.setFile(new File(jswDir, "agent-license.conf"));
-					copy.execute();
+
+					boolean packageAgent = new File(jswDir, "agent-license.conf").exists();
+					if (packageAgent) {
+						FilterSet agentFilterSet = new FilterSet();
+						agentFilterSet.addFilter("classpath2", "wrapper.java.classpath.2=../lib/agentVersion/*.jar");
+						agentFilterSet.addFilter("maxmemory.value", "wrapper.java.maxmemory=1024");
+						agentFilterSet.addFilter("maxmemory.percent", "");
+						agentFilterSet.addFilter("bootstrap.class", "io.onedev.agent.Agent");
+						agentFilterSet.addFilter("app.name", "onedevagent");
+						agentFilterSet.addFilter("app.long.name", "OneDev Agent");
+						agentFilterSet.addFilter("app.description", "OneDev Agent");
+
+						File agentDir = new File(sandboxDir, "agent");
+
+						copy = new Copy();
+						copy.setProject(antProject);
+						copy.setTofile(new File(agentDir, "bin/agent.bat"));
+						copy.setFile(new File(jswDir, "AppCommand.bat.in"));
+						filterSet = copy.createFilterSet();
+						filterSet.addFilter("set_fixed_command", "");
+						filterSet.addFilter("set_pass_through", "set _PASS_THROUGH=app_args");
+						filterSet.addFilter("properties_and_parameters", "");
+						filterSet.addFilter("passthrough_parameters", "set _PARAMETERS=--");
+						copy.execute();
+
+						copy = new Copy();
+						copy.setTofile(new File(agentDir, "bin/agent.sh"));
+						copy.setFile(new File(jswDir, "App.sh.in"));
+						filterSet = copy.createFilterSet();
+						filterSet.addConfiguredFilterSet(agentFilterSet);
+						filterSet.addFilter("set_fixed_command", "");
+						filterSet.addFilter("set_pass_through", "");
+						filterSet.addFilter("properties_and_parameters", "--");
+						copy.execute();
+
+						copy = new Copy();
+						copy.setProject(antProject);
+						copy.setTofile(new File(agentDir, "conf/wrapper.conf"));
+						copy.setFile(new File(jswDir, "wrapper.conf"));
+						copy.createFilterSet().addConfiguredFilterSet(agentFilterSet);
+						copy.execute();
+
+						copy = new Copy();
+						copy.setProject(antProject);
+						copy.setTofile(new File(agentDir, "conf/wrapper-license.conf"));
+						copy.setFile(new File(jswDir, "agent-license.conf"));
+						copy.execute();
+					}
 										
 					Chmod chmod = new Chmod();
 					chmod.setProject(antProject);
@@ -302,8 +305,12 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					String executables = productProps.getProperty("executables");
 					chmod.setIncludes(executables);
 					chmod.execute();
-					
-					String prefix = "onedev-" + project.getVersion();
+
+					String prefix;
+					if (project.getParent().getArtifactId().equals("server"))
+						prefix = "onedev-" + project.getVersion();
+					else
+						prefix = project.getParent().getArtifactId() + "-" + project.getVersion();
 					Zip zip = new Zip();
 					zip.setProject(antProject);
 					
@@ -323,95 +330,99 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					zip.addZipfileset(zipFileSet);
 					
 					zip.execute();
-					
-					try {
-						FileUtils.copyDirectoryStructure(agentDir, new File(buildDir, "agent"));
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
 
-					agentDir = new File(buildDir, "agent");
-					
-					File agentBootDir = new File(agentDir, "boot");
-					for (File file: bootDir.listFiles()) {
-						if (file.getName().startsWith("libwrapper-") 
-								|| file.getName().startsWith("wrapper-") 
-								|| file.getName().equals("wrapper.jar")) {
-							try {
-								FileUtils.copyFileToDirectory(file, agentBootDir);
-							} catch (IOException e) {
-								throw new RuntimeException(e);
-							}
+					if (packageAgent) {
+						try {
+							FileUtils.copyDirectoryStructure(
+									new File(sandboxDir, "agent"),
+									new File(buildDir, "agent"));
+						} catch (IOException e) {
+							throw new RuntimeException(e);
 						}
-					}
 
-					Artifact agentArtifact = null;
-	    	    	for (Artifact artifact: project.getArtifacts()) {
-	    	    		if (PluginUtils.isRuntimeArtifact(artifact) && artifact.getGroupId().equals("io.onedev") && 
-	    	    				artifact.getArtifactId().equals("agent")) {
-	    	    			agentArtifact = artifact;
-	    	    			break;
-	    	    		}
-	    	    	}
-	    	    	if (agentArtifact == null)
-	    	    		throw new RuntimeException("Unable to find agent artifact");
+						File agentDir = new File(buildDir, "agent");
 
-    	    		Properties agentProps = Preconditions.checkNotNull(PluginUtils.readProperties(
-    	    				agentArtifact.getFile(), PluginConstants.AGENT_PROPERTY_FILE));
-	    	    	
-    	    		Set<String> agentDependencies = new HashSet<>();
-    	    		for (String dependency: Splitter.on(";").omitEmptyStrings().split(agentProps.getProperty("dependencies"))) {
-    	    			int index = dependency.indexOf(':');
-    	    			agentDependencies.add(dependency.substring(0, index));
-    	    		}
-    	    		
-					File agentLibDir = new File(agentDir, "lib");
-					try {
-						FileUtils.copyFileToDirectory(agentArtifact.getFile(), new File(agentLibDir, agentArtifact.getVersion()));
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
-        	    	for (Artifact artifact: project.getArtifacts()) {
-        	    		if (PluginUtils.isRuntimeArtifact(artifact)) {
-            	    		if (agentDependencies.contains(artifact.getGroupId() + "." + artifact.getArtifactId())) { 
-    							try {
-									FileUtils.copyFileToDirectory(artifact.getFile(), new File(agentLibDir, agentArtifact.getVersion()));
+						File agentBootDir = new File(agentDir, "boot");
+						for (File file: bootDir.listFiles()) {
+							if (file.getName().startsWith("libwrapper-")
+									|| file.getName().startsWith("wrapper-")
+									|| file.getName().equals("wrapper.jar")) {
+								try {
+									FileUtils.copyFileToDirectory(file, agentBootDir);
 								} catch (IOException e) {
 									throw new RuntimeException(e);
 								}
-            	    		}
-        	    		}
-        	    	}    	    
+							}
+						}
 
-        	    	try {
-						File agentConfFile = new File(agentDir, "conf/wrapper.conf");
-						String wrapperConfContent = FileUtils.fileRead(agentConfFile);
-						wrapperConfContent = wrapperConfContent.replace("agentVersion", agentArtifact.getVersion());
-						FileUtils.fileWrite(agentConfFile, wrapperConfContent);
-					} catch (IOException e) {
-						throw new RuntimeException(e);
+						Artifact agentArtifact = null;
+						for (Artifact artifact: project.getArtifacts()) {
+							if (PluginUtils.isRuntimeArtifact(artifact) && artifact.getGroupId().equals("io.onedev") &&
+									artifact.getArtifactId().equals("agent")) {
+								agentArtifact = artifact;
+								break;
+							}
+						}
+						if (agentArtifact == null)
+							throw new RuntimeException("Unable to find agent artifact");
+
+						Properties agentProps = Preconditions.checkNotNull(PluginUtils.readProperties(
+								agentArtifact.getFile(), PluginConstants.AGENT_PROPERTY_FILE));
+
+						Set<String> agentDependencies = new HashSet<>();
+						for (String dependency: Splitter.on(";").omitEmptyStrings().split(agentProps.getProperty("dependencies"))) {
+							int index = dependency.indexOf(':');
+							agentDependencies.add(dependency.substring(0, index));
+						}
+
+						File agentLibDir = new File(agentDir, "lib");
+						try {
+							FileUtils.copyFileToDirectory(agentArtifact.getFile(), new File(agentLibDir, agentArtifact.getVersion()));
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+						for (Artifact artifact: project.getArtifacts()) {
+							if (PluginUtils.isRuntimeArtifact(artifact)) {
+								if (agentDependencies.contains(artifact.getGroupId() + "." + artifact.getArtifactId())) {
+									try {
+										FileUtils.copyFileToDirectory(artifact.getFile(), new File(agentLibDir, agentArtifact.getVersion()));
+									} catch (IOException e) {
+										throw new RuntimeException(e);
+									}
+								}
+							}
+						}
+
+						try {
+							File agentConfFile = new File(agentDir, "conf/wrapper.conf");
+							String wrapperConfContent = FileUtils.fileRead(agentConfFile);
+							wrapperConfContent = wrapperConfContent.replace("agentVersion", agentArtifact.getVersion());
+							FileUtils.fileWrite(agentConfFile, wrapperConfContent);
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+
+						try {
+							byte[] logbackConfBytes = Preconditions.checkNotNull(
+									PluginUtils.readBytes(agentArtifact.getFile(), "agent/conf/logback.xml"));
+							Files.write(logbackConfBytes, new File(agentDir, "conf/logback.xml"));
+							byte[] agentPropsBytes = Preconditions.checkNotNull(
+									PluginUtils.readBytes(agentArtifact.getFile(), "agent/conf/agent.properties"));
+							Files.write(agentPropsBytes, new File(agentDir, "conf/agent.properties"));
+							Files.touch(new File(agentDir, "conf/attributes.properties"));
+							new File(agentDir, "logs").mkdir();
+							Files.touch(new File(agentDir, "logs/console.log"));
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
+
+						chmod = new Chmod();
+						chmod.setProject(antProject);
+						chmod.setDir(agentDir);
+						chmod.setPerm("755");
+						chmod.setIncludes(executables);
+						chmod.execute();
 					}
-	    	    	
-        	    	try {
-            	    	byte[] logbackConfBytes = Preconditions.checkNotNull(
-            	    			PluginUtils.readBytes(agentArtifact.getFile(), "agent/conf/logback.xml"));
-						Files.write(logbackConfBytes, new File(agentDir, "conf/logback.xml"));
-						byte[] agentPropsBytes = Preconditions.checkNotNull(
-            	    			PluginUtils.readBytes(agentArtifact.getFile(), "agent/conf/agent.properties"));
-						Files.write(agentPropsBytes, new File(agentDir, "conf/agent.properties"));
-						Files.touch(new File(agentDir, "conf/attributes.properties"));
-						new File(agentDir, "logs").mkdir();
-						Files.touch(new File(agentDir, "logs/console.log"));						
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
-        	    	
-					chmod = new Chmod();
-					chmod.setProject(antProject);
-					chmod.setDir(agentDir);
-					chmod.setPerm("755");
-					chmod.setIncludes(executables);
-					chmod.execute();
 	    	    } else {
 					Archiver archiver;
 					try {

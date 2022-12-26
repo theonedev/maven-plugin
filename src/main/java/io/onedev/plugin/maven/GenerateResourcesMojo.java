@@ -46,7 +46,7 @@ public class GenerateResourcesMojo extends AbstractMojo {
 	
 	@Parameter(defaultValue = "${executables}")
 	private String executables;
-	
+
     /**
      * The entry point to Aether, i.e. the component doing all the work.
      */
