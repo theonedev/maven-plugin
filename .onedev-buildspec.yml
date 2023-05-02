@@ -1,4 +1,7 @@
-version: 15
+version: 19
+properties:
+- name: buildEnvironment
+  value: 1dev/build-environment:1.5
 jobs:
 - name: Release
   steps:
@@ -11,7 +14,7 @@ jobs:
   - !CommandStep
     name: detect build version
     runInContainer: true
-    image: 1dev/build-environment:1.4
+    image: '@property:buildEnvironment@'
     interpreter: !DefaultInterpreter
       commands:
       - set -e
@@ -28,7 +31,7 @@ jobs:
   - !CommandStep
     name: deploy
     runInContainer: true
-    image: 1dev/build-environment:1.4
+    image: '@property:buildEnvironment@'
     interpreter: !DefaultInterpreter
       commands:
       - mvn clean deploy -Dmaven.deploy.password=@secrets:maven-deploy-password@
@@ -45,8 +48,6 @@ jobs:
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
-  cpuRequirement: 250
-  memoryRequirement: 128
   caches:
   - key: maven-cache
     path: /root/.m2/repository
@@ -76,6 +77,4 @@ jobs:
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
-  cpuRequirement: 250
-  memoryRequirement: 128
   timeout: 3600
