@@ -319,7 +319,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					ZipFileSet zipFileSet = new ZipFileSet();
 					zipFileSet.setDir(sandboxDir);
 					zipFileSet.setPrefix(prefix);
-					zipFileSet.setExcludes(executables + ", site/lib/*.jar");
+					zipFileSet.setExcludes(executables);
 					zip.addZipfileset(zipFileSet);
 					
 					zipFileSet = new ZipFileSet();
