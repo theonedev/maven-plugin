@@ -213,8 +213,8 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					
 					FilterSet serverFilterSet = new FilterSet();
 					serverFilterSet.addFilter("classpath2", "");
-					serverFilterSet.addFilter("maxmemory.value", "#wrapper.java.maxmemory=1024");
-					serverFilterSet.addFilter("maxmemory.percent", "wrapper.java.maxmemory.percent=50");
+					serverFilterSet.addFilter("maxmemory.value", "#wrapper.java.additional.100=-Xmx1024m");
+					serverFilterSet.addFilter("maxmemory.percent", "wrapper.java.additional.100=-XX:MaxRAMPercentage=50");
 					serverFilterSet.addFilter("bootstrap.class", "io.onedev.commons.bootstrap.Bootstrap");
 					serverFilterSet.addFilter("app.name", "onedev");
 					serverFilterSet.addFilter("app.long.name", "OneDev");
@@ -252,9 +252,10 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					boolean packageAgent = new File(jswDir, "agent-license.conf").exists();
 					if (packageAgent) {
 						FilterSet agentFilterSet = new FilterSet();
+
 						agentFilterSet.addFilter("classpath2", "wrapper.java.classpath.2=../lib/agentVersion/*.jar");
-						agentFilterSet.addFilter("maxmemory.value", "wrapper.java.maxmemory=1024");
-						agentFilterSet.addFilter("maxmemory.percent", "");
+						agentFilterSet.addFilter("maxmemory.value", "wrapper.java.additional.100=-Xmx1024m");
+						agentFilterSet.addFilter("maxmemory.percent", "#wrapper.java.additional.100=-XX:MaxRAMPercentage=50");
 						agentFilterSet.addFilter("bootstrap.class", "io.onedev.agent.Agent");
 						agentFilterSet.addFilter("app.name", "onedevagent");
 						agentFilterSet.addFilter("app.long.name", "OneDev Agent");
