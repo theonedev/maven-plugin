@@ -210,6 +210,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					copyBatchCommand(antProject, "upgrade", "Upgrade");
 					copyBatchCommand(antProject, "apply-db-constraints", "Apply DB Constraints");
 					copyBatchCommand(antProject, "reset-admin-password", "Reset Admin Password");
+					copyBatchCommand(antProject, "enable-internal-login", "Enable Internal Login");
 					
 					FilterSet serverFilterSet = new FilterSet();
 					serverFilterSet.addFilter("classpath2", "");
@@ -233,6 +234,7 @@ public class PackageArtifactsMojo extends AbstractMojo {
 					copyShellCommand(antProject, "upgrade", "Upgrade");
 					copyShellCommand(antProject, "apply-db-constraints", "Apply DB Constraints");
 					copyShellCommand(antProject, "reset-admin-password", "Reset Admin Password");
+					copyShellCommand(antProject, "enable-internal-login", "Enable Internal Login");
 	
 					copy = new Copy();
 					copy.setProject(antProject);
